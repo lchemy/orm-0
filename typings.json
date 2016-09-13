@@ -1,0 +1,19 @@
+{
+  "name": "worm.js",
+  "dependencies": {},
+  "globalDependencies": {
+    "bluebird": "registry:dt/bluebird#3.0.0+20160811111256",
+    "knex": "registry:dt/knex#0.0.0+20160819212955",
+    "node": "registry:env/node#6.0.0+20160825160117"
+  },
+  "devDependencies": {
+    "chai": "registry:npm/chai#3.5.0+20160723033700",
+    "chai-as-promised": "registry:npm/chai-as-promised#5.1.0+20160310030142",
+    "mock-knex": "registry:npm/mock-knex#0.3.0+20160911180555",
+    "sinon": "registry:npm/sinon#1.16.0+20160723033700",
+    "sinon-chai": "registry:npm/sinon-chai#2.8.0+20160310030142"
+  },
+  "globalDevDependencies": {
+    "mocha": "registry:dt/mocha#2.2.5+20160720003353"
+  }
+}

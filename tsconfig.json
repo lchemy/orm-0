@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "module": "es2015",
+        "target": "es2015",
+        "moduleResolution": "node",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+		"strictNullChecks": true,
+		"rootDir": ".",
+		"baseUrl": ".",
+        "outDir": "dist"
+    },
+    "include": [
+        "./src/**/*.ts",
+		"./test/**/*.ts",
+		"./typings/**/*.d.ts"
+    ]
+}
