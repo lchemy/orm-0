@@ -1,8 +1,8 @@
+import { scaffold } from "../builders";
 import { Orm } from "../core";
+import { ORM_CLASSES_CACHE, ORM_INSTANCES_CACHE } from "../misc/cache";
 import { FieldDefinition, FieldDefinitions, fieldDefinitions } from "./field";
 import { JoinDefinition, JoinDefinitions, joinDefinitions } from "./join";
-import { scaffold } from "../builders";
-import { ORM_INSTANCES_CACHE, ORM_CLASSES_CACHE } from "../cache";
 
 export interface OrmDefinition {
 	table: string;
@@ -39,7 +39,7 @@ export function define<O extends Orm, M extends Object>(definition: OrmDefinitio
 	return AnonOrm.bootstrap(new (AnonOrm as any)()).then((orm) => {
 		ORM_INSTANCES_CACHE.set(parsedDefinition.ref!, orm);
 		return orm;
-	})
+	});
 }
 
 function parseOrmDefinition(definition: OrmDefinition | string): OrmDefinition {

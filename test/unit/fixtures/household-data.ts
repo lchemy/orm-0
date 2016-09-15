@@ -35,16 +35,16 @@ export const definitions: Promise<Definitions> = Promise.all([
 			name: field.String("name"),
 
 			parentId: field.Numerical("parent_id", false),
-			parent: join.one("people").on((me: PersonOrm, parent: PersonOrm) => {
+			parent: join.one<PersonOrm>("people").on((me, parent) => {
 				return me.parentId.eq(parent.id);
 			}),
 
-			children: join.many("people", true).on((child: PersonOrm, me: PersonOrm) => {
+			children: join.many<PersonOrm>("people", true).on((child, me) => {
 				return child.parentId.eq(me.id);
 			}),
-			pet: join.many("pets", true).through("people_pets", (pet: PetOrm, peoplePets: PeoplePetsJoinOrm) => {
+			pet: join.many<PetOrm>("pets", true).through<PeoplePetsJoinOrm>("people_pets", (pet, peoplePets) => {
 				return peoplePets.petId.eq(pet.id);
-			}).on((pet: PetOrm, peoplePets: PeoplePetsJoinOrm, me: PersonOrm) => {
+			}).on((pet, peoplePets, me) => {
 				return peoplePets.personId.eq(me.id);
 			})
 		};
@@ -54,9 +54,9 @@ export const definitions: Promise<Definitions> = Promise.all([
 			id: field.Numerical("id"),
 			name: field.String("name"),
 
-			owners: join.many("people", true, false).through("people_pets", (owner: PersonOrm, peoplePets: PeoplePetsJoinOrm) => {
+			owners: join.many<PersonOrm>("people", true, false).through<PeoplePetsJoinOrm>("people_pets", (owner, peoplePets) => {
 				return peoplePets.petId.eq(owner.id);
-			}).on((owner: PersonOrm, peoplePets: PeoplePetsJoinOrm, me: PetOrm) => {
+			}).on((owner, peoplePets, me) => {
 				return peoplePets.petId.eq(me.id);
 			})
 		};

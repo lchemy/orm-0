@@ -3,8 +3,6 @@ import { Field } from "./field";
 import { JoinManyField } from "./join-many-field";
 import { Orm } from "./orm";
 
-// import { Field, FilterOperator, FilterGrouping } from "../core";
-
 export abstract class FilterNode {
 	abstract operator: FilterOperator;
 

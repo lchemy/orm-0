@@ -1,7 +1,4 @@
-import {
-	Filter, Orm, OrmProperties, FilterGrouping, FilterOperator, Field,
-	OpFilterNode, JoinManyFilterNode, FilterGroup
-} from "../../core";
+import { Field, Filter, FilterGroup, FilterGrouping, FilterOperator, JoinManyFilterNode, OpFilterNode, Orm } from "../../core";
 
 // TODO: implement
 export function testFilter(filter: Filter, joinOrm: Orm, base: Object, join: Object): boolean {

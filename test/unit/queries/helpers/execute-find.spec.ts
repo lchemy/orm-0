@@ -1,16 +1,14 @@
 import { expect } from "chai";
+// import { Tracker, getTracker, mock, unmock } from "mock-knex";
 
-import { Tracker, getTracker, mock, unmock } from "mock-knex";
-import { Orm, define, enums, field, inspectOrm } from "../../../../src";
-import { FindQuery, executeFind } from "../../../../src/queries/helpers/execute-find";
+import { SortDirection } from "../../../../src/core";
+import { executeFind } from "../../../../src/queries/helpers/execute-find";
 import { knex } from "../../fixtures/knex";
+
 import {
-	City, CityOrm, Continent, ContinentOrm, Country, CountryOrm,
-	CountriesLanguagesJoin, CountriesLanguagesJoinOrm, Data,
-	Language, LanguageOrm, State, StateOrm,
+	City, CityOrm, Continent, Country, CountryOrm, Data, Language, LanguageOrm, State, StateOrm,
 	createTables, definitions, deleteTables, mockData
 } from "../../fixtures/geo-data";
-
 
 describe("execute find", () => {
 	let queryCount: number;
@@ -80,6 +78,51 @@ describe("execute find", () => {
 		});
 	});
 
+	it("should select countries with related orms' default fields", () => {
+		return definitions.then(({ countryOrm }) => {
+			return executeFind(countryOrm, {
+				fields: [
+					countryOrm.id,
+					countryOrm.name,
+					countryOrm.continent,
+					countryOrm.states
+				]
+			}).then((countries: Country[]) => {
+				expect(queryCount).to.eq(2);
+
+				expect(countries.length).to.eq(data.countries.length);
+				countries.forEach((country) => {
+					expect(country).to.have.all.keys(["id", "name", "continent", "states"]);
+					expect(country.continent).to.have.all.keys(["id", "name"]);
+
+					country.states.forEach((state) => {
+						expect(state).to.have.all.keys(["id", "name", "country", "countryId"]);
+					});
+				});
+			});
+		});
+	});
+
+	it("should select countries with composite fields", () => {
+		return definitions.then(({ countryOrm }) => {
+			return executeFind(countryOrm, {
+				fields: [
+					countryOrm.id,
+					countryOrm.name,
+					countryOrm.metrics
+				]
+			}).then((countries: Country[]) => {
+				expect(queryCount).to.eq(1);
+
+				expect(countries.length).to.eq(data.countries.length);
+				countries.forEach((country) => {
+					expect(country).to.have.all.keys(["id", "name", "metrics"]);
+					expect(country.metrics).to.have.all.keys(["population", "gdp"]);
+				});
+			});
+		});
+	});
+
 	it("should select countries sorted by name with default sort", () => {
 		return definitions.then(({ countryOrm }) => {
 			return executeFind(countryOrm, {
@@ -113,7 +156,7 @@ describe("execute find", () => {
 				],
 				sorts: [{
 					field: countryOrm.name,
-					direction: enums.SortDirection.DESCENDING
+					direction: SortDirection.DESCENDING
 				}]
 			}).then((countries: Country[]) => {
 				expect(queryCount).to.eq(1);
@@ -393,6 +436,33 @@ describe("execute find", () => {
 						cityIds.add(city.id);
 					});
 				});
+			});
+		});
+	});
+
+	it("should select count of cities", () => {
+		return definitions.then(({ cityOrm }) => {
+			return executeFind(cityOrm, {
+				count: true
+			}).then((count: number) => {
+				expect(queryCount).to.eq(1);
+				expect(count).to.eq(data.cities.length);
+			});
+		});
+	});
+
+	it("should not make join many queries if base result is empty", () => {
+		return definitions.then(({ countryOrm }) => {
+			return executeFind(countryOrm, {
+				fields: [
+					countryOrm,
+					countryOrm.states,
+					countryOrm.states.orm.cities
+				],
+				filter: countryOrm.id.eq(-1)
+			}).then((countries: Country[]) => {
+				expect(queryCount).to.eq(1);
+				expect(countries).to.have.length(0);
 			});
 		});
 	});

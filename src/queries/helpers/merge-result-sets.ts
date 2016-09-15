@@ -1,7 +1,4 @@
-import {
-	Filter, Orm, ORM_PROPERTIES, OrmProperties
-} from "../../core";
-
+import { Filter, Orm } from "../../core";
 import { getObjectAtPath } from "./get-object-at-path";
 import { testFilter } from "./test-filter";
 

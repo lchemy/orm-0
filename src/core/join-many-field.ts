@@ -1,5 +1,5 @@
-import { Orm, OrmProperties } from "./orm";
-import { Filter, SubqueryFilterValue, ExistsFilterNode, NotExistsFilterNode } from "./filter";
+import { ExistsFilterNode, Filter, NotExistsFilterNode, SubqueryFilterValue } from "./filter";
+import { Orm } from "./orm";
 
 export class JoinManyField<J extends Orm, F extends Orm> {
 	orm: J;

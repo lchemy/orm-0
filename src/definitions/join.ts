@@ -1,21 +1,23 @@
-import {
-	Orm, Field, FieldExclusion, CompositeField, JoinManyField, Filter
-} from "../core";
-
+import { CompositeField, Field, FieldExclusion, Filter, JoinManyField, Orm } from "../core";
 import { normalizeExclusivity } from "./field";
 
 export type JoinFieldsBuilder<J extends Orm> = (orm: J) => (Field<J, any> | CompositeField | JoinManyField<any, J> | Orm)[];
-export type JoinExpressionBuilder<O extends Orm> = (root: O, ...orms: Orm[]) => Filter;
 export interface JoinThroughBuilder<O extends Orm> {
 	ref: string | symbol;
 	builder: JoinExpressionBuilder<O>;
 }
 
-export abstract class JoinDefinition<O extends Orm, J extends Orm> {
+type JoinExpressionBuilder<O> = (o: O, ...orms: Orm[]) => Filter;
+type JoinExpressionBuilder2<O1, O2> = (o1: O1, o2: O2) => Filter;
+type JoinExpressionBuilder3<O1, O2, O3> = (o1: O1, o2: O2, o3: O3) => Filter;
+type JoinExpressionBuilder4<O1, O2, O3, O4> = (o1: O1, o2: O2, o3: O3, o4: O4) => Filter;
+type JoinExpressionBuilder5<O1, O2, O3, O4, O5> = (o1: O1, o2: O2, o3: O3, o4: O4, o5: O5, ...orms: Orm[]) => Filter;
+
+export abstract class JoinDefinition<O, J> {
 	ref: string | symbol;
 	exclusivity: FieldExclusion;
 	includeJoins: boolean;
-	fieldsBuilder?: JoinFieldsBuilder<J>;
+	abstract fieldsBuilder?: JoinFieldsBuilder<O | J>;
 	abstract throughBuilders: JoinThroughBuilder<O | J>[];
 	abstract onBuilder: JoinExpressionBuilder<O | J>;
 
@@ -30,41 +32,59 @@ export abstract class JoinDefinition<O extends Orm, J extends Orm> {
 		return this;
 	}
 
-	abstract through(ref: string | symbol, ...orms: Orm[]): this;
-	abstract on(...orms: Orm[]): this;
+	abstract through(ref: string | symbol, builder: JoinExpressionBuilder<O | J>): JoinDefinition<O, J>;
+	abstract on(builder: JoinExpressionBuilder<O | J>): this;
+}
+interface JoinDefinition2<O, J> extends JoinDefinition<O, J> {
+	through<T1 extends Orm>(ref: string | symbol, builder: JoinExpressionBuilder2<O, T1>): JoinDefinition3<O, T1, J>;
+	on(builder: JoinExpressionBuilder2<O, J>): this;
+}
+interface JoinDefinition3<O, T1, J> extends JoinDefinition<O, J> {
+	through<T2 extends Orm>(ref: string | symbol, builder: JoinExpressionBuilder3<O, T1, T2>): JoinDefinition4<O, T1, T2, J>;
+	on(builder: JoinExpressionBuilder3<O, T1, J>): this;
+}
+interface JoinDefinition4<O, T1, T2, J> extends JoinDefinition<O, J> {
+	through<T3 extends Orm>(ref: string | symbol, builder: JoinExpressionBuilder4<O, T1, T2, T3>): JoinDefinition5<O, T1, T2, T3, J>;
+	on(builder: JoinExpressionBuilder4<O, T1, T2, J>): this;
+}
+interface JoinDefinition5<O, T1, T2, T3, J> extends JoinDefinition<O, J> {
+	through<T4 extends Orm>(ref: string | symbol, builder: JoinExpressionBuilder5<O, T1, T2, T3, T4>): JoinDefinition5<O, T1, T2, T3, J>;
+	on(builder: JoinExpressionBuilder5<O, T1, T2, T3, J>): this;
 }
 
-export class JoinOneDefinition<O extends Orm, J extends Orm> extends JoinDefinition<O, J> {
+export class JoinOneDefinition<O extends Orm, J extends Orm> extends JoinDefinition<O, J> implements JoinDefinition2<O, J> {
+	fieldsBuilder?: JoinFieldsBuilder<J>;
 	throughBuilders: JoinThroughBuilder<O>[] = [];
 	onBuilder: JoinExpressionBuilder<O>;
 
-	through(ref: string | symbol, builder: JoinExpressionBuilder<O>): this {
+	through<T1 extends Orm>(ref: string | symbol, builder: JoinExpressionBuilder2<O, T1>): JoinDefinition3<O, T1, J> {
 		this.throughBuilders.push({
 			ref: ref,
 			builder: builder
 		});
-		return this;
+		return this as any as JoinDefinition3<O, T1, J>;
 	}
 
-	on(builder: JoinExpressionBuilder<O>): this {
+	on(builder: JoinExpressionBuilder2<O, J>): this {
 		this.onBuilder = builder;
 		return this;
 	}
 }
 
-export class JoinManyDefinition<O extends Orm, J extends Orm> extends JoinDefinition<O, J> {
+export class JoinManyDefinition<O extends Orm, J extends Orm> extends JoinDefinition<J, O> implements JoinDefinition2<J, O> {
+	fieldsBuilder?: JoinFieldsBuilder<J>;
 	throughBuilders: JoinThroughBuilder<J>[] = [];
 	onBuilder: JoinExpressionBuilder<J>;
 
-	through(ref: string | symbol, builder: JoinExpressionBuilder<J>): this {
+	through<T1 extends Orm>(ref: string | symbol, builder: JoinExpressionBuilder2<J, T1>): JoinDefinition3<J, T1, O> {
 		this.throughBuilders.push({
 			ref: ref,
 			builder: builder
 		});
-		return this;
+		return this as any as JoinDefinition3<J, T1, O>;
 	}
 
-	on(builder: JoinExpressionBuilder<J>): this {
+	on(builder: JoinExpressionBuilder2<J, O>): this {
 		this.onBuilder = builder;
 		return this;
 	}

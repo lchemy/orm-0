@@ -1,7 +1,4 @@
-import {
-	Orm, Field, FieldType,
-	BooleanField, EnumField, NumericalField, DateField, StringField, BinaryField
-} from "../core";
+import { BinaryField, BooleanField, DateField, EnumField, Field, FieldType, NumericalField, Orm, StringField } from "../core";
 import { FieldDefinition } from "../definitions";
 
 export function buildField<O extends Orm, T>(orm: O, path: string[], definition: FieldDefinition<T>): Field<O, T> {

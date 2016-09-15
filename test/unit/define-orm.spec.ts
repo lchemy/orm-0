@@ -1,4 +1,4 @@
-import { define, field, Orm } from "../../src";
+// import { define, field, Orm } from "../../src";
 
 // describe("define", () => {
 // 	it("should work", (done) => {

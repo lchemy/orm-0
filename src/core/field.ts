@@ -1,10 +1,10 @@
-import { FieldType, FieldExclusion } from "./enums";
-import { Orm, ORM_PROPERTIES, OrmProperties } from "./orm";
+import { FieldExclusion, FieldType } from "./enums";
 import {
-	EqualFilterNode, NotEqualFilterNode, GreaterThanFilterNode, GreaterThanEqualFilterNode, LessThanFilterNode,
-	LessThanEqualFilterNode, LikeFilterNode, NotLikeFilterNode, BetweenFilterNode, NotBetweenFilterNode, InFilterNode,
-	NotInFilterNode, IsNullFilterNode, IsNotNullFilterNode
+	BetweenFilterNode, EqualFilterNode, GreaterThanEqualFilterNode, GreaterThanFilterNode, InFilterNode,
+	IsNotNullFilterNode, IsNullFilterNode, LessThanEqualFilterNode, LessThanFilterNode, LikeFilterNode,
+	NotBetweenFilterNode, NotEqualFilterNode, NotInFilterNode, NotLikeFilterNode
 } from "./filter";
+import { Orm } from "./orm";
 
 export type FieldMapper<T> = (model: Object) => T;
 

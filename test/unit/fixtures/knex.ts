@@ -1,6 +1,8 @@
-import { config } from "../../../src/config/knex";
+import * as Knex from "knex";
 
-config({
+import { config } from "../../../src";
+
+export let knex: Knex = config({
 	client: "sqlite3",
 	connection: {
 		filename: ":memory:",
@@ -13,5 +15,3 @@ config({
 	useNullAsDefault: true,
 	debug: false
 });
-
-export { knex } from "../../../src/config/knex";

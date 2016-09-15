@@ -1,11 +1,7 @@
 import * as Knex from "knex";
-import { knex } from "../../config/knex";
 
-import {
-	Field, Orm, OrmProperties,
-	FilterGrouping, FilterOperator,
-	Filter, FilterGroup, OpFilterNode, JoinManyFilterNode
-} from "../../core";
+import { knex } from "../../config/knex";
+import { Field, Filter, FilterGroup, FilterGrouping, FilterOperator, JoinManyFilterNode, OpFilterNode, Orm, OrmProperties } from "../../core";
 
 const SQL_OPERATOR_MAP: { [operator: number]: string } = {
 	[FilterOperator.EQ]:			"? = ?",
@@ -58,7 +54,7 @@ function attachFilterInner(builder: Knex.QueryBuilder, filter: Filter, mode: Att
 			case FilterOperator.EXISTS:
 				fnName += "Exists";
 				break;
-			case FilterOperator.EXISTS:
+			case FilterOperator.NOT_EXISTS:
 				fnName += "NotExists";
 				break;
 			default:
@@ -151,6 +147,7 @@ function translateJoinManyFilterNode(filter: JoinManyFilterNode<any, any>): (thi
 		joinOrmProperties.join!.through.forEach((joinExpr) => {
 			let throughOrmProperties: OrmProperties = Orm.getProperties(joinExpr.orm),
 				throughTableAlias: string = `${ throughOrmProperties.table } AS ${ throughOrmProperties.tableAs }`;
+			// tslint:disable-next-line:no-shadowed-variable
 			query.leftJoin(throughTableAlias, function (this: Knex.QueryBuilder): void {
 				attachFilterInner(this, joinExpr.on, AttachFilterMode.ON);
 			});

@@ -1,6 +1,6 @@
-import { Orm, OrmProperties, OrmJoinOn, Field, JoinManyField, CompositeField, Filter } from "../core";
-import { JoinOneDefinition, JoinManyDefinition, JoinThroughBuilder, JoinFieldsBuilder } from "../definitions";
-import { ORM_CLASSES_CACHE } from "../cache";
+import { CompositeField, Field, Filter, JoinManyField, Orm, OrmJoinOn, OrmProperties } from "../core";
+import { JoinFieldsBuilder, JoinManyDefinition, JoinOneDefinition, JoinThroughBuilder } from "../definitions";
+import { ORM_CLASSES_CACHE } from "../misc/cache";
 
 function buildJoinOrm<O extends Orm>(
 	ref: string | symbol, path: string[], parentOrm: Orm,
@@ -20,7 +20,6 @@ function buildJoinOrm<O extends Orm>(
 			}
 			return check(Orm.getProperties(ancestorOrm).parent, depth);
 		})(parentOrm, 0);
-
 
 		let tableAs: string = path.join("$");
 		let orm: O = new (AnonOrm as any)(tableAs, path) as O,
@@ -118,7 +117,9 @@ export function buildJoinManyOrm<O extends Orm, J extends Orm>(parentOrm: O, pat
 	});
 }
 
-export function buildJoinOneThroughOrm<O extends Orm, J extends Orm, T extends Orm>(parentOrm: O, joinOrm: J, path: string[], throughBuilder: JoinThroughBuilder<O>): Promise<T> {
+export function buildJoinOneThroughOrm<O extends Orm, J extends Orm, T extends Orm>(
+	parentOrm: O, joinOrm: J, path: string[], throughBuilder: JoinThroughBuilder<O>
+): Promise<T> {
 	return buildJoinOrm<T>(throughBuilder.ref, path, parentOrm, false, false, joinOrm).then((orm) => {
 		let properties: OrmProperties = Orm.getProperties(orm);
 		properties.anonymous = true;
@@ -126,7 +127,9 @@ export function buildJoinOneThroughOrm<O extends Orm, J extends Orm, T extends O
 	});
 }
 
-export function buildJoinManyThroughOrm<O extends Orm, J extends Orm, T extends Orm>(parentOrm: O, joinOrm: J, path: string[], throughBuilder: JoinThroughBuilder<J>): Promise<T> {
+export function buildJoinManyThroughOrm<O extends Orm, J extends Orm, T extends Orm>(
+	parentOrm: O, joinOrm: J, path: string[], throughBuilder: JoinThroughBuilder<J>
+): Promise<T> {
 	return buildJoinOrm<T>(throughBuilder.ref, path, parentOrm, false, true, joinOrm).then((orm) => {
 		let properties: OrmProperties = Orm.getProperties(orm);
 		properties.anonymous = true;

@@ -1,4 +1,5 @@
 import * as Knex from "knex";
+
 import { knex } from "../../config/knex";
 
 export function withTransaction<T>(callback: (trx: Knex.Transaction) => Promise<T>, trx?: Knex.Transaction): Promise<T> {

@@ -1,11 +1,9 @@
-import { Orm } from "./core";
-
 export interface DeferredEntry<T> {
 	promise: Promise<T>;
 	resolve: (value: T | Promise<T>) => void;
 }
 
-class DeferredMap<K, V> {
+export class DeferredMap<K, V> {
 	private map: Map<K, DeferredEntry<V>>;
 
 	constructor() {
@@ -19,8 +17,8 @@ class DeferredMap<K, V> {
 		}
 
 		let resolve: ((value: V | Promise<V>) => void) | undefined = undefined;
-		let promise: Promise<V> = new Promise((_resolve) => {
-			resolve = _resolve;
+		let promise: Promise<V> = new Promise((r) => {
+			resolve = r;
 		});
 
 		deferred = {
@@ -63,6 +61,3 @@ class DeferredMap<K, V> {
 		return this.map.has(key);
 	}
 }
-
-export const ORM_INSTANCES_CACHE: DeferredMap<string | symbol, Orm> = new DeferredMap<string | symbol, Orm>();
-export const ORM_CLASSES_CACHE: DeferredMap<string | symbol, typeof Orm> = new DeferredMap<string | symbol, Orm>();

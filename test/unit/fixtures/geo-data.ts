@@ -10,6 +10,10 @@ export interface Continent {
 export interface Country {
 	id: number;
 	name: string;
+	metrics: {
+		population: number,
+		gdp: number
+	};
 
 	continentId: number;
 	continent: Continent;
@@ -54,6 +58,11 @@ export interface CountryOrm extends Orm {
 	id: field.Numerical;
 	code: field.String;
 	name: field.String;
+
+	metrics: {
+		population: field.Numerical,
+		gdp: field.Numerical
+	};
 
 	continentId: field.Numerical;
 	continent: field.JoinOne<ContinentOrm>;
@@ -105,7 +114,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 			id: field.Numerical("id"),
 			name: field.String("name"),
 
-			countries: join.many("countries", false, true).on((country: CountryOrm, continent: ContinentOrm) => {
+			countries: join.many<CountryOrm>("countries", false, true).on((country, continent) => {
 				return country.continentId.eq(continent.id);
 			})
 		};
@@ -114,18 +123,22 @@ export const definitions: Promise<Definitions> = Promise.all([
 		return {
 			id: field.Numerical("id"),
 			name: field.String("name"),
+			metrics: {
+				population: field.Numerical("population"),
+				gdp: field.Numerical("gdp")
+			},
 
 			continentId: field.Numerical("continent_id", undefined, "continent.id"),
-			continent: join.one("continents", true).on((country: CountryOrm, continent: ContinentOrm) => {
+			continent: join.one<ContinentOrm>("continents", true).on((country, continent) => {
 				return country.continentId.eq(continent.id);
 			}),
 
-			states: join.many("states", false, true).on((state: StateOrm, country: CountryOrm) => {
+			states: join.many<StateOrm>("states", false, true).on((state, country) => {
 				return state.countryId.eq(country.id);
 			}),
-			languages: join.many("languages", false, true).through("countries_languages", (language: LanguageOrm, countriesLanguagesJoin: CountriesLanguagesJoinOrm) => {
+			languages: join.many<LanguageOrm>("languages", false, true).through<CountriesLanguagesJoinOrm>("countries_languages", (language, countriesLanguagesJoin) => {
 				return countriesLanguagesJoin.languageId.eq(language.id);
-			}).on((language: LanguageOrm, countriesLanguagesJoin: CountriesLanguagesJoinOrm, country: CountryOrm) => {
+			}).on((language, countriesLanguagesJoin, country) => {
 				return countriesLanguagesJoin.countryId.eq(country.id);
 			})
 		};
@@ -136,11 +149,11 @@ export const definitions: Promise<Definitions> = Promise.all([
 			name: field.String("name"),
 
 			countryId: field.Numerical("country_id", undefined, "country.id"),
-			country: join.one("countries", true).on((state: StateOrm, country: CountryOrm) => {
+			country: join.one<CountryOrm>("countries", true).on((state, country) => {
 				return state.countryId.eq(country.id);
 			}),
 
-			cities: join.many("cities").on((city: CityOrm, state: StateOrm) => {
+			cities: join.many<CityOrm>("cities").on((city, state) => {
 				return city.stateId.eq(state.id);
 			})
 		};
@@ -151,7 +164,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 			name: field.String("name"),
 
 			stateId: field.Numerical("state_id", undefined, "state.id"),
-			state: join.one("states", true).on((city: CityOrm, state: StateOrm) => {
+			state: join.one<StateOrm>("states", true).on((city, state) => {
 				return city.stateId.eq(state.id);
 			})
 		};
@@ -161,9 +174,9 @@ export const definitions: Promise<Definitions> = Promise.all([
 			id: field.Numerical("id"),
 			name: field.String("name"),
 
-			countries: join.many("countries").through("countries_languages", (country: CountryOrm, countriesLanguagesJoin: CountriesLanguagesJoinOrm) => {
+			countries: join.many<CountryOrm>("countries").through<CountriesLanguagesJoinOrm>("countries_languages", (country, countriesLanguagesJoin) => {
 				return countriesLanguagesJoin.countryId.eq(country.id);
-			}).on((country: CountryOrm, countriesLanguagesJoin: CountriesLanguagesJoinOrm, language: LanguageOrm) => {
+			}).on((country, countriesLanguagesJoin, language) => {
 				return countriesLanguagesJoin.languageId.eq(language.id);
 			})
 		};
@@ -196,7 +209,9 @@ export function createTables(): Promise<void> {
 			CREATE TEMPORARY TABLE countries (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
 				continent_id INTEGER,
-				name STRING
+				name STRING,
+				population INTEGER,
+				gdp INTEGER
 			);
 		`),
 		knex.raw(`
@@ -304,16 +319,22 @@ export function mockData(): Promise<Data> {
 			return p.then(() => {
 				return knex("countries").insert({
 					continent_id: randomArrayValue(continents).id,
-					name: randomString()
+					name: randomString(),
+					population: (Math.random() * 10000 + 1000) | 0,
+					gdp: (Math.random() * 100000 + 100) | 0
 				});
 			});
 		}, Promise.resolve()).then(() => {
-			return knex("countries").select(["id", "name", "continent_id"]).then((rows) => {
+			return knex("countries").select(["id", "name", "population", "gdp", "continent_id"]).then((rows) => {
 				return rows.map((row) => {
 					let continent: Continent = continents.find((c) => c.id === row.continent_id)!;
 					let country: Country = {
 						id: row.id,
 						name: row.name,
+						metrics: {
+							population: row.population,
+							gdp: row.gdp
+						},
 						continentId: row.continent_id,
 						continent: continent,
 
@@ -443,7 +464,7 @@ export function mockData(): Promise<Data> {
 }
 
 function randomString(): string {
-	return Math.floor(Number.MAX_SAFE_INTEGER * Math.random()).toString(36)
+	return Math.floor(Number.MAX_SAFE_INTEGER * Math.random()).toString(36);
 }
 function randomArrayValue<T>(arr: T[]): T {
 	let i: number = Math.floor(arr.length * Math.random());

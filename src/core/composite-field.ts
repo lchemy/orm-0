@@ -1,5 +1,5 @@
-import { Orm, OrmProperties, ORM_PROPERTIES } from "./orm";
 import { Field } from "./field";
+import { Orm, OrmProperties } from "./orm";
 
 export const COMPOSITE_FIELD_PROPERTIES: symbol = Symbol("composite-field-properties");
 

@@ -16,7 +16,7 @@ export function unflatten(item: any): Object {
 	}
 
 	return Object.keys(item).filter((key) => {
-		return !~key.indexOf(".__") && key.indexOf("__") !== 0
+		return !~key.indexOf(".__") && key.indexOf("__") !== 0;
 	}).reduce((memo, key) => {
 		let value: any = unflatten(item[key]);
 		key.split(".").reduce((inner, piece, i, pieces) => {

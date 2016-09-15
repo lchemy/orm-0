@@ -1,10 +1,10 @@
 import * as Knex from "knex";
-import { knex } from "../../config/knex";
 
-import { Filter, Orm, OrmProperties, OrmJoinOn, Field, CompositeField, JoinManyField, SortDirection } from "../../core";
-import { attachFilter, AttachFilterMode } from "./attach-filter";
-import { mergeResultSets, JoinResultContainer } from "./merge-result-sets";
+import { knex } from "../../config/knex";
+import { CompositeField, Field, Filter, JoinManyField, Orm, OrmJoinOn, OrmProperties, SortDirection } from "../../core";
+import { AttachFilterMode, attachFilter } from "./attach-filter";
 import { hydrateFilter } from "./hydrate-filter";
+import { JoinResultContainer, mergeResultSets } from "./merge-result-sets";
 import { unflatten } from "./unflatten";
 
 export type FindQueryField = Field<any, any> | CompositeField | JoinManyField<any, any> | Orm;
@@ -43,14 +43,26 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 
 		ormFieldsMap = new Map();
 	} else {
+		let selectFields: Set<Field<any, any>>;
 		if (query.fields == null || query.fields.length === 0) {
 			// TODO: get default fields
-			query.fields = Array.from(getDefaultFields(orm));
+			selectFields = getDefaultFields(orm);
+		} else {
+			selectFields = new Set();
+			query.fields.forEach((field: FindQueryField) => {
+				if (field instanceof Field) {
+					selectFields.add(field);
+				} else {
+					getDefaultFields(field).forEach((defaultField) => {
+						selectFields.add(defaultField);
+					});
+				}
+			});
 		}
-		ormFieldsMap = getOrmFieldsMap(query.fields!, orm, baseOrm);
+		ormFieldsMap = getOrmFieldsMap(selectFields, orm, baseOrm);
 
 		let fieldOrms: Set<Orm> = new Set<Orm>([orm]);
-		query.fields!.forEach((field: Field<any, any>) => {
+		selectFields.forEach((field: Field<any, any>) => {
 			if (Orm.getProperties(field.orm).base === baseOrm) {
 				fieldOrms.add(field.orm);
 			}
@@ -195,17 +207,11 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 }
 
 type OrmFieldsMap = Map<Orm, Set<Field<any, any>>>;
-function getOrmFieldsMap(fields: FindQueryField[], orm: Orm, baseOrm: Orm): OrmFieldsMap {
+function getOrmFieldsMap(fields: Set<Field<any, any>>, orm: Orm, baseOrm: Orm): OrmFieldsMap {
 	let ormFieldsMap: OrmFieldsMap = new Map();
 
 	fields.forEach((field) => {
-		if (field instanceof Field) {
-			addToOrmFieldsMap(field, orm, baseOrm, ormFieldsMap);
-			return;
-		}
-		getDefaultFields(field).forEach((innerField) => {
-			addToOrmFieldsMap(innerField, orm, baseOrm, ormFieldsMap);
-		});
+		addToOrmFieldsMap(field, orm, baseOrm, ormFieldsMap);
 	});
 
 	let ormProperties: OrmProperties = Orm.getProperties(orm);
@@ -279,7 +285,6 @@ function addJoinOrm(joinOrm: Orm, baseOrm: Orm, joinOrms: Set<Orm>): void {
 		addJoinOrm(joinOrmProperties.parent, baseOrm, joinOrms);
 	}
 }
-
 
 function getDefaultFields(field: JoinManyField<any, any> | CompositeField | Orm): Set<Field<any, any>> {
 	if (field instanceof JoinManyField) {

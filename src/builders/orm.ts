@@ -1,9 +1,5 @@
-import {
-	Orm, OrmProperties,
-	CompositeField, CompositeProperties,
-	Field, JoinManyField, FieldExclusion
-} from "../core";
-import { OrmSchema, FieldDefinition, JoinDefinition, JoinOneDefinition, JoinManyDefinition } from "../definitions";
+import { CompositeField, CompositeProperties, Field, FieldExclusion, JoinManyField, Orm, OrmProperties } from "../core";
+import { FieldDefinition, JoinDefinition, JoinManyDefinition, JoinOneDefinition, OrmSchema } from "../definitions";
 import { buildField } from "./field";
 import { buildJoinManyOrm, buildJoinOneOrm } from "./join";
 
