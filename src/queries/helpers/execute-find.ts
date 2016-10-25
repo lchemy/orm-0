@@ -15,6 +15,7 @@ export interface FindQuery {
 	filter?: Filter;
 	sorts?: (Field<any, any> | { field: Field<any, any>, direction?: SortDirection })[];
 	pagination?: { offset?: number, limit?: number };
+	auth?: any;
 }
 
 export function executeFind(orm: Orm, query: FindQuery = {}, trx?: Knex.Transaction): Promise<number | Object[]> {
@@ -91,13 +92,23 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 	}
 
 	// WHERE
-	if (query.filter) {
-		query.filter.fields.filter((field) => {
+	let filter: Filter | undefined = query.filter;
+
+	if (query.auth && ormProperties.auth) {
+		let authFilter: Filter | undefined = ormProperties.auth(query.auth);
+		if (filter == null) {
+			filter = authFilter;
+		} else if (authFilter != null) {
+			filter = authFilter.and(filter);
+		}
+	}
+	if (filter) {
+		filter.fields.filter((field) => {
 			return Orm.getProperties(field.orm).base === baseOrm;
 		}).forEach((field) => {
 			fields.add(field);
 		});
-		attachFilter(builder, query.filter, AttachFilterMode.WHERE);
+		attachFilter(builder, filter, AttachFilterMode.WHERE);
 	}
 
 	// ORDER BY
@@ -134,13 +145,21 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 			return;
 		}
 
+		let authFilter: Filter | undefined = joinOrmProperties.auth && query.auth ? joinOrmProperties.auth(query.auth) : undefined;
+
 		let joins: OrmJoinOn[] = joinOrmProperties.join.through;
 		if (joinOrm !== orm) {
+			let onFilter: Filter = joinOrmProperties.join.on;
+			if (authFilter) {
+				onFilter = onFilter.and(authFilter);
+			}
+
 			joins = joins.concat([{
 				orm: joinOrm,
-				on: joinOrmProperties.join.on
+				on: onFilter
 			}]);
 		}
+
 		joins.forEach((join) => {
 			let innerJoinOrmProperties: OrmProperties = Orm.getProperties(join.orm),
 				innerJoinTableAlias: string = `${ innerJoinOrmProperties.table } AS ${ innerJoinOrmProperties.tableAs }`;
@@ -157,14 +176,14 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 				return 0;
 			}
 			return result[0].count || 0;
-		}) as any;
+		}) as any as Promise<number>;
 	}
 
 	if (ormFieldsMap.size <= 1) {
 		// TODO: bluebird is not happy?
 		return builder.then((result) => {
 			return result;
-		}) as any;
+		}) as any as Promise<Object[]>;
 	}
 
 	// TODO: handle distinct or something?
@@ -188,7 +207,8 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 
 			let promise: Promise<JoinResultContainer> = executeFindInner(joinOrm, joinOrm, {
 				fields: Array.from(joinFields),
-				filter: hydrateFilter(joinWhere, orm, baseResults)
+				filter: hydrateFilter(joinWhere, orm, baseResults),
+				auth: query.auth
 			}, trx).then((joinResults: Object[]) => {
 				return {
 					results: joinResults,
@@ -203,7 +223,7 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 		return Promise.all(promises).then((containers) => {
 			return mergeResultSets(baseResults, containers);
 		});
-	}) as any;
+	}) as any as Promise<Object[]>;
 }
 
 type OrmFieldsMap = Map<Orm, Set<Field<any, any>>>;

@@ -23,13 +23,19 @@ export interface PeoplePetsJoinOrm extends Orm {
 	petId: field.Numerical;
 }
 
+export interface AuthUser {
+	isAdmin: boolean;
+	allowedPetIds?: number[];
+	allowedPersonIds?: number[];
+}
+
 type Definitions = {
 	personOrm: PersonOrm,
 	petOrm: PetOrm,
 	peoplePetsJoinOrm: PeoplePetsJoinOrm
 };
 export const definitions: Promise<Definitions> = Promise.all([
-	define<PersonOrm, Object>("people", (field, join) => {
+	define<PersonOrm, Object, AuthUser>("people", (field, join) => {
 		return {
 			id: field.Numerical("id"),
 			name: field.String("name"),
@@ -37,19 +43,39 @@ export const definitions: Promise<Definitions> = Promise.all([
 			parentId: field.Numerical("parent_id", false),
 			parent: join.one<PersonOrm>("people").on((me, parent) => {
 				return me.parentId.eq(parent.id);
+			}).withAuth<AuthUser>((auth, me, parent) => {
+				if (auth.isAdmin || auth.allowedPersonIds == null) {
+					return;
+				}
+				return parent.id.in(...auth.allowedPersonIds);
 			}),
 
 			children: join.many<PersonOrm>("people", true).on((child, me) => {
 				return child.parentId.eq(me.id);
+			}).withAuth<AuthUser>((auth, child, me) => {
+				if (auth.isAdmin || auth.allowedPersonIds == null) {
+					return;
+				}
+				return child.id.in(...auth.allowedPersonIds);
 			}),
 			pet: join.many<PetOrm>("pets", true).through<PeoplePetsJoinOrm>("people_pets", (pet, peoplePets) => {
 				return peoplePets.petId.eq(pet.id);
 			}).on((pet, peoplePets, me) => {
 				return peoplePets.personId.eq(me.id);
+			}).withAuth<AuthUser>((auth, pet, peoplePets, me) => {
+				if (auth.isAdmin || auth.allowedPetIds == null) {
+					return;
+				}
+				return pet.id.in(...auth.allowedPetIds);
 			})
 		};
+	}, (auth, orm) => {
+		if (auth.isAdmin || auth.allowedPersonIds == null) {
+			return;
+		}
+		return orm.id.in(...auth.allowedPersonIds);
 	}),
-	define<PetOrm, Object>("pets", (field, join) => {
+	define<PetOrm, Object, AuthUser>("pets", (field, join) => {
 		return {
 			id: field.Numerical("id"),
 			name: field.String("name"),
@@ -58,8 +84,18 @@ export const definitions: Promise<Definitions> = Promise.all([
 				return peoplePets.petId.eq(owner.id);
 			}).on((owner, peoplePets, me) => {
 				return peoplePets.petId.eq(me.id);
+			}).withAuth<AuthUser>((auth, owner, peoplePets, me) => {
+				if (auth.isAdmin || auth.allowedPersonIds == null) {
+					return;
+				}
+				return owner.id.in(...auth.allowedPersonIds);
 			})
 		};
+	}, (auth, orm) => {
+		if (auth.isAdmin || auth.allowedPetIds == null) {
+			return;
+		}
+		return orm.id.in(...auth.allowedPetIds);
 	}),
 	define<PeoplePetsJoinOrm, Object>("people_pets", (field, join) => {
 		return {

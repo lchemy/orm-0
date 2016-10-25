@@ -1,5 +1,5 @@
-import { CompositeField, Field, Filter, JoinManyField, Orm, OrmJoinOn, OrmProperties } from "../core";
-import { JoinFieldsBuilder, JoinManyDefinition, JoinOneDefinition, JoinThroughBuilder } from "../definitions";
+import { BoundedOrmAuthBuilder, CompositeField, Field, Filter, JoinManyField, Orm, OrmJoinOn, OrmProperties } from "../core";
+import { JoinFieldsBuilder, JoinManyDefinition, JoinOneDefinition, JoinThroughBuilder, OrmAuthBuilder } from "../definitions";
 import { ORM_CLASSES_CACHE } from "../misc/cache";
 
 function buildJoinOrm<O extends Orm>(
@@ -61,6 +61,12 @@ export function buildJoinOneOrm<O extends Orm, J extends Orm>(parentOrm: O, path
 				through: zipOrmJoinThrough(throughOrms, throughFilters)
 			};
 
+			if (definition.authBuilder != null) {
+				properties.auth = (auth: any): Filter | undefined => {
+					return definition.authBuilder!(auth, parentOrm, ...throughOrms, orm);
+				};
+			}
+
 			if (definition.fieldsBuilder != null) {
 				properties.defaultFields = expandFieldsBuilder<J>(orm, definition.fieldsBuilder);
 			}
@@ -107,6 +113,12 @@ export function buildJoinManyOrm<O extends Orm, J extends Orm>(parentOrm: O, pat
 					requiredJoinFields: requiredJoinFields
 				}
 			};
+
+			if (definition.authBuilder != null) {
+				properties.auth = (auth: any): Filter | undefined => {
+					return definition.authBuilder!(auth, orm, ...throughOrms, parentOrm);
+				};
+			}
 
 			if (definition.fieldsBuilder != null) {
 				properties.defaultFields = expandFieldsBuilder<J>(orm, definition.fieldsBuilder);

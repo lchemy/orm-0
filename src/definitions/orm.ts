@@ -1,5 +1,5 @@
 import { scaffold } from "../builders";
-import { Orm } from "../core";
+import { Filter, Orm } from "../core";
 import { ORM_CLASSES_CACHE, ORM_INSTANCES_CACHE } from "../misc/cache";
 import { FieldDefinition, FieldDefinitions, fieldDefinitions } from "./field";
 import { JoinDefinition, JoinDefinitions, joinDefinitions } from "./join";
@@ -15,14 +15,25 @@ export interface OrmSchema<O extends Orm> {
 }
 type OrmSchemaBuilder<O extends Orm> = (field: FieldDefinitions, join: JoinDefinitions<O>) => OrmSchema<O>;
 
-export function define<O extends Orm, M extends Object>(definition: OrmDefinition | string, schemaBuilder: OrmSchemaBuilder<O>): Promise<O> {
+export type OrmAuthBuilder<A, O extends Orm> = (auth: A, orm: O) => Filter | undefined;
+
+export function define<O extends Orm, M extends Object>(definition: OrmDefinition | string, schemaBuilder: OrmSchemaBuilder<O>): Promise<O>;
+export function define<O extends Orm, M extends Object, A>(definition: OrmDefinition | string, schemaBuilder: OrmSchemaBuilder<O>, authBuilder: OrmAuthBuilder<A, O>): Promise<O>;
+export function define<O extends Orm, M extends Object, A>(definition: OrmDefinition | string, schemaBuilder: OrmSchemaBuilder<O>, authBuilder?: OrmAuthBuilder<A, O>): Promise<O> {
 	let parsedDefinition: OrmDefinition = parseOrmDefinition(definition);
 
 	let schema: OrmSchema<O> = schemaBuilder(fieldDefinitions, joinDefinitions);
 
 	let AnonOrm: typeof Orm = class extends Orm {
-		static bootstrap(orm: Orm, includeJoins: boolean = true): Promise<Orm> {
-			return scaffold(orm, schema, includeJoins);
+		static bootstrap(orm: O, includeJoins: boolean = true): Promise<O> {
+			return scaffold(orm, schema, includeJoins).then((bootstrappedOrm: O) => {
+				if (authBuilder != null) {
+					Orm.getProperties(bootstrappedOrm).auth = (auth: any) => {
+						return authBuilder!(auth, bootstrappedOrm);
+					};
+				}
+				return bootstrappedOrm;
+			});
 		};
 
 		constructor(tableAs: string = "root", path: string[] = []) {

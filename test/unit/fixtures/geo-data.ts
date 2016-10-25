@@ -48,6 +48,12 @@ export interface CountriesLanguagesJoin {
 	languageId: number;
 }
 
+export interface AuthUser {
+	isAdmin: boolean;
+	allowedContinentIds?: number[];
+	allowedCountryIds?: number[];
+}
+
 export interface ContinentOrm extends Orm {
 	id: field.Numerical;
 	name: field.String;
@@ -109,15 +115,25 @@ export type Definitions = {
 	countriesLanguagesJoinOrm: CountriesLanguagesJoinOrm
 };
 export const definitions: Promise<Definitions> = Promise.all([
-	define<ContinentOrm, Continent>("continents", (field, join) => {
+	define<ContinentOrm, Continent, AuthUser>("continents", (field, join) => {
 		return {
 			id: field.Numerical("id"),
 			name: field.String("name"),
 
 			countries: join.many<CountryOrm>("countries", false, true).on((country, continent) => {
 				return country.continentId.eq(continent.id);
+			}).withAuth<AuthUser>((auth, country) => {
+				if (auth.isAdmin || auth.allowedCountryIds == null) {
+					return;
+				}
+				return country.id.in(...auth.allowedCountryIds);
 			})
 		};
+	}, (auth, continent) => {
+		if (auth.isAdmin || auth.allowedContinentIds == null) {
+			return;
+		}
+		return continent.id.in(...auth.allowedContinentIds);
 	}),
 	define<CountryOrm, Country>("countries", (field, join) => {
 		return {

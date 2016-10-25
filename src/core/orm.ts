@@ -3,6 +3,8 @@ import { Filter } from "./filter";
 
 export const ORM_PROPERTIES: symbol = Symbol("orm-properties");
 
+export type BoundedOrmAuthBuilder = (auth: any) => Filter | undefined;
+
 export interface OrmProperties {
 	depth: number;
 
@@ -17,7 +19,9 @@ export interface OrmProperties {
 
 	anonymous: boolean;
 
-	defaultFields: Set<Field<any, any>>;
+	defaultFields: Set<Field<Orm, any>>;
+
+	auth?: BoundedOrmAuthBuilder;
 
 	join?: OrmJoinProperties;
 }
@@ -26,8 +30,8 @@ export interface OrmJoinProperties {
 	on: Filter;
 	through: OrmJoinOn[];
 	many?: {
-		requiredBaseFields: Set<Field<any, any>>;
-		requiredJoinFields: Set<Field<any, any>>;
+		requiredBaseFields: Set<Field<Orm, any>>;
+		requiredJoinFields: Set<Field<Orm, any>>;
 	};
 }
 

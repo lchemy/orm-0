@@ -466,4 +466,105 @@ describe("execute find", () => {
 			});
 		});
 	});
+
+	it("should get continents with auth", () => {
+		return definitions.then(({ continentOrm }) => {
+			let continentIds: number[] = data.continents.map((continent) => continent.id),
+				allowedContinentIds: number[] = continentIds.slice(0, Math.floor(continentIds.length / 2));
+
+			return executeFind(continentOrm, {
+				auth: {
+					isAdmin: false,
+					allowedContinentIds: allowedContinentIds
+				}
+			}).then((continents: Continent[]) => {
+				expect(continents.length).to.eq(allowedContinentIds.length);
+				expect(continents.length).to.be.lt(continentIds.length);
+
+				continents.forEach((continent) => {
+					expect(continent.id).to.be.oneOf(allowedContinentIds);
+				});
+			});
+		});
+	});
+
+	it("should get continents with auth as admin", () => {
+		return definitions.then(({ continentOrm }) => {
+			let continentIds: number[] = data.continents.map((continent) => continent.id),
+				allowedContinentIds: number[] = continentIds.slice(0, Math.floor(continentIds.length / 2));
+
+			return executeFind(continentOrm, {
+				auth: {
+					isAdmin: true,
+					allowedContinentIds: allowedContinentIds
+				}
+			}).then((continents: Continent[]) => {
+				expect(continents.length).to.be.gt(allowedContinentIds.length);
+				expect(continents.length).to.be.eq(continentIds.length);
+
+				continents.forEach((continent) => {
+					expect(continent.id).to.be.oneOf(continentIds);
+				});
+			});
+		});
+	});
+
+	it("should get countries with auth", () => {
+		return definitions.then(({ continentOrm }) => {
+			let countryIds: number[] = data.countries.map((country) => country.id),
+				allowedCountryIds: number[] = countryIds.slice(0, Math.floor(countryIds.length / 2));
+
+			return executeFind(continentOrm, {
+				fields: [
+					continentOrm,
+					continentOrm.countries
+				],
+				auth: {
+					isAdmin: false,
+					allowedCountryIds: allowedCountryIds
+				}
+			}).then((continents: Continent[]) => {
+				let countries: Country[] = continents.reduce((memo, continent) => {
+					return memo.concat(continent.countries);
+				}, [] as Country[]);
+
+				expect(countries.length).to.eq(allowedCountryIds.length);
+
+				countries.forEach((country) => {
+					expect(country.id).to.be.oneOf(allowedCountryIds);
+				});
+			});
+		});
+	});
+
+	it("should get continents from countries with auth", () => {
+		return definitions.then(({ countryOrm }) => {
+			let continentIds: number[] = data.continents.map((continent) => continent.id),
+				allowedContinentIds: number[] = continentIds.slice(0, Math.floor(continentIds.length / 2));
+
+			return executeFind(countryOrm, {
+				fields: [
+					countryOrm,
+					countryOrm.continent
+				],
+				auth: {
+					isAdmin: false,
+					allowedContinentIds: allowedContinentIds
+				}
+			}).then((countries: Country[]) => {
+				let continents: Continent[] = Array.from(countries.reduce((memo, country) => {
+					if (country.continent.id != null) {
+						memo.set(country.continent.id, country.continent);
+					}
+					return memo;
+				}, new Map<number, Continent>()).values());
+
+				expect(continents.length).to.eq(allowedContinentIds.length);
+
+				continents.forEach((continent) => {
+					expect(continent.id).to.be.oneOf(allowedContinentIds);
+				});
+			});
+		});
+	});
 });
