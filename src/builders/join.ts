@@ -1,5 +1,5 @@
-import { BoundedOrmAuthBuilder, CompositeField, Field, Filter, JoinManyField, Orm, OrmJoinOn, OrmProperties } from "../core";
-import { JoinFieldsBuilder, JoinManyDefinition, JoinOneDefinition, JoinThroughBuilder, OrmAuthBuilder } from "../definitions";
+import { CompositeField, Field, Filter, JoinManyField, Orm, OrmJoinOn, OrmProperties } from "../core";
+import { JoinFieldsBuilder, JoinManyDefinition, JoinOneDefinition, JoinThroughBuilder } from "../definitions";
 import { ORM_CLASSES_CACHE } from "../misc/cache";
 
 function buildJoinOrm<O extends Orm>(
