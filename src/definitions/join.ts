@@ -117,14 +117,14 @@ export class JoinManyDefinition<O extends Orm, J extends Orm> extends JoinDefini
 export type JoinOneDefiner<O extends Orm> = <J extends Orm>(ref: string | symbol, exclusivity?: FieldExclusion | boolean, includeJoins?: boolean) => JoinOneDefinition<O, J>;
 export type JoinManyDefiner<O extends Orm> = <J extends Orm>(ref: string | symbol, exclusivity?: FieldExclusion | boolean, includeJoins?: boolean) => JoinManyDefinition<O, J>;
 export interface JoinDefinitions<O extends Orm> {
-	one: JoinOneDefiner<O>;
-	many: JoinManyDefiner<O>;
+	One: JoinOneDefiner<O>;
+	Many: JoinManyDefiner<O>;
 }
 export const joinDefinitions: JoinDefinitions<Orm> = {
-	one: (ref: string | symbol, exclusivity?: FieldExclusion | boolean, includeJoins: boolean = false) => {
+	One: (ref: string | symbol, exclusivity?: FieldExclusion | boolean, includeJoins: boolean = false) => {
 		return new JoinOneDefinition<Orm, Orm>(ref, normalizeExclusivity(exclusivity, FieldExclusion.EXCLUDE), includeJoins);
 	},
-	many: (ref: string | symbol, exclusivity?: FieldExclusion | boolean, includeJoins: boolean = false) => {
+	Many: (ref: string | symbol, exclusivity?: FieldExclusion | boolean, includeJoins: boolean = false) => {
 		return new JoinManyDefinition<Orm, Orm>(ref, normalizeExclusivity(exclusivity, FieldExclusion.EXCLUDE), includeJoins);
 	}
 };

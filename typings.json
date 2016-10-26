@@ -2,9 +2,9 @@
   "name": "worm.js",
   "dependencies": {},
   "globalDependencies": {
-    "bluebird": "registry:dt/bluebird#3.0.0+20160811111256",
-    "knex": "registry:dt/knex#0.0.0+20160819212955",
-    "node": "registry:env/node#6.0.0+20160825160117"
+    "bluebird": "registry:dt/bluebird#3.0.0+20160928162057",
+    "knex": "registry:dt/knex#0.0.0+20160923124117",
+    "node": "registry:env/node#6.0.0+20161019193037"
   },
   "devDependencies": {
     "chai": "registry:npm/chai#3.5.0+20160723033700",

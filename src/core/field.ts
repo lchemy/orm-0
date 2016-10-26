@@ -16,14 +16,23 @@ export abstract class Field<O extends Orm, T> {
 	column: string;
 
 	exclusivity: FieldExclusion;
-	mapper?: FieldMapper<T>;
+	mapper: FieldMapper<T>;
 
 	constructor(orm: O, path: string[], column: string, exclusivity: FieldExclusion = FieldExclusion.INCLUDE, mapper?: FieldMapper<T>) {
 		this.orm = orm;
 		this.path = path;
 		this.column = column;
 		this.exclusivity = exclusivity;
-		this.mapper = mapper;
+
+		if (mapper != null) {
+			this.mapper = mapper;
+		} else {
+			this.mapper = (model: Object) => {
+				return this.path.reduce((memo, piece) => {
+					return memo != null ? memo[piece] : memo;
+				}, model) as T;
+			};
+		}
 	}
 
 	get tableAs(): string {

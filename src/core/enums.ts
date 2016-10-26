@@ -25,8 +25,8 @@ export enum FilterGrouping {
 };
 
 export enum SortDirection {
-	ASCENDING,
-	DESCENDING
+	DESCENDING,
+	ASCENDING
 };
 
 export enum FieldExclusion {

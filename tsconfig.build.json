@@ -4,13 +4,14 @@
         "target": "es2015",
         "moduleResolution": "node",
         "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
 		"strictNullChecks": true,
-		"noEmit": true,
-		"rootDir": "."
+		"rootDir": "./src",
+		"baseUrl": ".",
+        "outDir": "dist"
     },
     "include": [
         "./src/**/*.ts",
-		"./test/**/*.ts",
 		"./typings/**/*.d.ts"
     ]
 }

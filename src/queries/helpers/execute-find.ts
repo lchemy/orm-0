@@ -8,12 +8,13 @@ import { JoinResultContainer, mergeResultSets } from "./merge-result-sets";
 import { unflatten } from "./unflatten";
 
 export type FindQueryField = Field<any, any> | CompositeField | JoinManyField<any, any> | Orm;
+export type FindSortField = Field<any, any> | { field: Field<any, any>, direction?: SortDirection };
 
 export interface FindQuery {
 	count?: boolean;
 	fields?: FindQueryField[];
 	filter?: Filter;
-	sorts?: (Field<any, any> | { field: Field<any, any>, direction?: SortDirection })[];
+	sorts?: FindSortField[];
 	pagination?: { offset?: number, limit?: number };
 	auth?: any;
 }

@@ -1,21 +1,21 @@
-import { Orm, define, field } from "../../../src";
+import { Orm, define, field, join } from "../../../src";
 
 export interface PersonOrm extends Orm {
 	id: field.Numerical;
 	name: field.String;
 
 	parentId: field.Numerical;
-	parent: field.JoinOne<PersonOrm>;
+	parent: join.One<PersonOrm>;
 
-	children: field.JoinMany<PersonOrm>;
-	pets: field.JoinMany<PetOrm>;
+	children: join.Many<PersonOrm>;
+	pets: join.Many<PetOrm>;
 }
 
 export interface PetOrm extends Orm {
 	id: field.Numerical;
 	name: field.String;
 
-	owners: field.JoinMany<PersonOrm>;
+	owners: join.Many<PersonOrm>;
 }
 
 export interface PeoplePetsJoinOrm extends Orm {
@@ -41,7 +41,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 			name: field.String("name"),
 
 			parentId: field.Numerical("parent_id", false),
-			parent: join.one<PersonOrm>("people").on((me, parent) => {
+			parent: join.One<PersonOrm>("people").on((me, parent) => {
 				return me.parentId.eq(parent.id);
 			}).withAuth<AuthUser>((auth, me, parent) => {
 				if (auth.isAdmin || auth.allowedPersonIds == null) {
@@ -50,7 +50,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 				return parent.id.in(...auth.allowedPersonIds);
 			}),
 
-			children: join.many<PersonOrm>("people", true).on((child, me) => {
+			children: join.Many<PersonOrm>("people", true).on((child, me) => {
 				return child.parentId.eq(me.id);
 			}).withAuth<AuthUser>((auth, child, me) => {
 				if (auth.isAdmin || auth.allowedPersonIds == null) {
@@ -58,7 +58,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 				}
 				return child.id.in(...auth.allowedPersonIds);
 			}),
-			pet: join.many<PetOrm>("pets", true).through<PeoplePetsJoinOrm>("people_pets", (pet, peoplePets) => {
+			pet: join.Many<PetOrm>("pets", true).through<PeoplePetsJoinOrm>("people_pets", (pet, peoplePets) => {
 				return peoplePets.petId.eq(pet.id);
 			}).on((pet, peoplePets, me) => {
 				return peoplePets.personId.eq(me.id);
@@ -80,7 +80,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 			id: field.Numerical("id"),
 			name: field.String("name"),
 
-			owners: join.many<PersonOrm>("people", true, false).through<PeoplePetsJoinOrm>("people_pets", (owner, peoplePets) => {
+			owners: join.Many<PersonOrm>("people", true, false).through<PeoplePetsJoinOrm>("people_pets", (owner, peoplePets) => {
 				return peoplePets.petId.eq(owner.id);
 			}).on((owner, peoplePets, me) => {
 				return peoplePets.petId.eq(me.id);

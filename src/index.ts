@@ -1,10 +1,15 @@
 /* tslint:disable no-namespace */
-import { config, knex } from "./config/knex";
 import {
 	BinaryField, BooleanField, CompositeField, CompositeProperties, DateField,
 	EnumField, Field, JoinManyField, NumericalField, Orm, OrmProperties, StringField
 } from "./core";
-import { define } from "./definitions";
+
+export { config, knex } from "./config/knex";
+export { define } from "./definitions";
+export {
+	FindAllQuery, FindAllWithCountResult, FindOneQuery, UpdateQuery,
+	findAll, findAllWithCount, findCount, findOne, insert, insertOne, remove, update
+} from "./queries";
 
 export namespace field {
 	export type Boolean = BooleanField<Orm>;
@@ -13,9 +18,11 @@ export namespace field {
 	export type Date = DateField<Orm>;
 	export type String = StringField<Orm>;
 	export type Binary = BinaryField<Orm>;
+}
 
-	export type JoinOne<O extends Orm> = O;
-	export type JoinMany<J extends Orm> = JoinManyField<J, Orm>;
+export namespace join {
+	export type One<O extends Orm> = O;
+	export type Many<J extends Orm> = JoinManyField<J, Orm>;
 }
 
 export namespace debug {
@@ -30,9 +37,7 @@ export namespace debug {
 interface OrmLike extends Orm {
 	[key: string]: Field<this, any> | JoinManyField<Orm, this> | Orm | OrmLike;
 }
+
 export {
-	OrmLike as Orm,
-	define,
-	config,
-	knex
+	OrmLike as Orm
 };

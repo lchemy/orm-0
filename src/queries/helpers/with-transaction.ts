@@ -8,5 +8,5 @@ export function withTransaction<T>(callback: (trx: Knex.Transaction) => Promise<
 	}
 
 	// TODO: bluebird is not happy
-	return knex.transaction(callback) as any;
+	return knex.transaction(callback) as any as Promise<T>;
 }

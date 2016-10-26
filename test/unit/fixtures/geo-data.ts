@@ -1,4 +1,4 @@
-import { Orm, define, field } from "../../../src";
+import { Orm, define, field, join } from "../../../src";
 import { knex } from "./knex";
 
 export interface Continent {
@@ -58,7 +58,7 @@ export interface ContinentOrm extends Orm {
 	id: field.Numerical;
 	name: field.String;
 
-	countries: field.JoinMany<CountryOrm>;
+	countries: join.Many<CountryOrm>;
 }
 export interface CountryOrm extends Orm {
 	id: field.Numerical;
@@ -71,10 +71,10 @@ export interface CountryOrm extends Orm {
 	};
 
 	continentId: field.Numerical;
-	continent: field.JoinOne<ContinentOrm>;
+	continent: join.One<ContinentOrm>;
 
-	states: field.JoinMany<StateOrm>;
-	languages: field.JoinMany<LanguageOrm>;
+	states: join.Many<StateOrm>;
+	languages: join.Many<LanguageOrm>;
 }
 export interface StateOrm extends Orm {
 	id: field.Numerical;
@@ -82,9 +82,9 @@ export interface StateOrm extends Orm {
 	name: field.String;
 
 	countryId: field.Numerical;
-	country: field.JoinOne<CountryOrm>;
+	country: join.One<CountryOrm>;
 
-	cities: field.JoinMany<CityOrm>;
+	cities: join.Many<CityOrm>;
 }
 export interface CityOrm extends Orm {
 	id: field.Numerical;
@@ -92,14 +92,14 @@ export interface CityOrm extends Orm {
 	name: field.String;
 
 	stateId: field.Numerical;
-	state: field.JoinOne<StateOrm>;
+	state: join.One<StateOrm>;
 }
 
 export interface LanguageOrm extends Orm {
 	id: field.Numerical;
 	name: field.String;
 
-	countries: field.JoinMany<CountryOrm>;
+	countries: join.Many<CountryOrm>;
 }
 export interface CountriesLanguagesJoinOrm extends Orm {
 	countryId: field.Numerical;
@@ -120,7 +120,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 			id: field.Numerical("id"),
 			name: field.String("name"),
 
-			countries: join.many<CountryOrm>("countries", false, true).on((country, continent) => {
+			countries: join.Many<CountryOrm>("countries", false, true).on((country, continent) => {
 				return country.continentId.eq(continent.id);
 			}).withAuth<AuthUser>((auth, country) => {
 				if (auth.isAdmin || auth.allowedCountryIds == null) {
@@ -145,14 +145,14 @@ export const definitions: Promise<Definitions> = Promise.all([
 			},
 
 			continentId: field.Numerical("continent_id", undefined, "continent.id"),
-			continent: join.one<ContinentOrm>("continents", true).on((country, continent) => {
+			continent: join.One<ContinentOrm>("continents", true).on((country, continent) => {
 				return country.continentId.eq(continent.id);
 			}),
 
-			states: join.many<StateOrm>("states", false, true).on((state, country) => {
+			states: join.Many<StateOrm>("states", false, true).on((state, country) => {
 				return state.countryId.eq(country.id);
 			}),
-			languages: join.many<LanguageOrm>("languages", false, true).through<CountriesLanguagesJoinOrm>("countries_languages", (language, countriesLanguagesJoin) => {
+			languages: join.Many<LanguageOrm>("languages", false, true).through<CountriesLanguagesJoinOrm>("countries_languages", (language, countriesLanguagesJoin) => {
 				return countriesLanguagesJoin.languageId.eq(language.id);
 			}).on((language, countriesLanguagesJoin, country) => {
 				return countriesLanguagesJoin.countryId.eq(country.id);
@@ -165,11 +165,11 @@ export const definitions: Promise<Definitions> = Promise.all([
 			name: field.String("name"),
 
 			countryId: field.Numerical("country_id", undefined, "country.id"),
-			country: join.one<CountryOrm>("countries", true).on((state, country) => {
+			country: join.One<CountryOrm>("countries", true).on((state, country) => {
 				return state.countryId.eq(country.id);
 			}),
 
-			cities: join.many<CityOrm>("cities").on((city, state) => {
+			cities: join.Many<CityOrm>("cities").on((city, state) => {
 				return city.stateId.eq(state.id);
 			})
 		};
@@ -180,7 +180,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 			name: field.String("name"),
 
 			stateId: field.Numerical("state_id", undefined, "state.id"),
-			state: join.one<StateOrm>("states", true).on((city, state) => {
+			state: join.One<StateOrm>("states", true).on((city, state) => {
 				return city.stateId.eq(state.id);
 			})
 		};
@@ -190,7 +190,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 			id: field.Numerical("id"),
 			name: field.String("name"),
 
-			countries: join.many<CountryOrm>("countries").through<CountriesLanguagesJoinOrm>("countries_languages", (country, countriesLanguagesJoin) => {
+			countries: join.Many<CountryOrm>("countries").through<CountriesLanguagesJoinOrm>("countries_languages", (country, countriesLanguagesJoin) => {
 				return countriesLanguagesJoin.countryId.eq(country.id);
 			}).on((country, countriesLanguagesJoin, language) => {
 				return countriesLanguagesJoin.languageId.eq(language.id);
