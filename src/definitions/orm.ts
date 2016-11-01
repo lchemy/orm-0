@@ -13,7 +13,7 @@ export interface OrmDefinition {
 export interface OrmSchema<O extends Orm> {
 	[key: string]: FieldDefinition<any> | JoinDefinition<O, any> | OrmSchema<O>;
 }
-type OrmSchemaBuilder<O extends Orm> = (field: FieldDefinitions, join: JoinDefinitions<O>) => OrmSchema<O>;
+export type OrmSchemaBuilder<O extends Orm> = (field: FieldDefinitions, join: JoinDefinitions<O>) => OrmSchema<O>;
 
 export type OrmAuthBuilder<A, O extends Orm> = (auth: A, orm: O) => Filter | undefined;
 

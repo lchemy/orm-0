@@ -3,7 +3,7 @@ import * as Knex from "knex";
 import { Field, Filter, Orm, SortDirection } from "../core";
 import { FindQueryField, FindSortField, executeFind, getOrm, normalizeSortDirection } from "./helpers";
 
-type RawFindSortField = Field<any, any> | { field: Field<any, any>, direction?: string | number | SortDirection };
+export type RawFindSortField = Field<any, any> | { field: Field<any, any>, direction?: string | number | SortDirection };
 
 export interface FindOneQuery {
 	fields?: FindQueryField[];

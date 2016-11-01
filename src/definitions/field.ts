@@ -14,7 +14,7 @@ export class FieldDefinition<T> {
 	}
 }
 
-type FieldDefiner<T> = (column: string, exclusivity?: FieldExclusion | boolean, mapper?: FieldMapper<T> | string) => FieldDefinition<T>;
+export type FieldDefiner<T> = (column: string, exclusivity?: FieldExclusion | boolean, mapper?: FieldMapper<T> | string) => FieldDefinition<T>;
 export interface FieldDefinitions {
 	Boolean: FieldDefiner<boolean>;
 	Enum: FieldDefiner<any>;

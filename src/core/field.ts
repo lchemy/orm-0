@@ -73,7 +73,7 @@ export abstract class Field<O extends Orm, T> {
 	}
 }
 
-abstract class ComparableField<O, T> extends Field<O, T> {
+export abstract class ComparableField<O, T> extends Field<O, T> {
 	gt(value: T | Field<any, T>): GreaterThanFilterNode<T> {
 		return new GreaterThanFilterNode(this, value);
 	}
