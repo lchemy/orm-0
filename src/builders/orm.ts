@@ -8,7 +8,8 @@ export function scaffold<O extends Orm>(
 ): Promise<O | CompositeField> {
 	let promise: Promise<any> = Promise.resolve();
 
-	let properties: OrmProperties | CompositeProperties;
+	let ormProperties: OrmProperties = Orm.getProperties(orm),
+		properties: OrmProperties | CompositeProperties;
 	if (obj instanceof Orm) {
 		properties = Orm.getProperties(obj);
 	} else if (obj instanceof CompositeField) {
@@ -27,11 +28,20 @@ export function scaffold<O extends Orm>(
 		schema[key] instanceof FieldDefinition
 	).forEach((key) => {
 		// TODO: do something with default fields
-		let field: Field<O, any> = buildField(orm, path.concat(key), schema[key] as FieldDefinition<any>);
+		let definition: FieldDefinition<any> = schema[key] as FieldDefinition<any>,
+			field: Field<O, any> = buildField(orm, path.concat(key), definition);
 		Object.defineProperty(obj, key, {
 			enumerable: true,
 			value: field
 		});
+
+		if (definition.primary) {
+			if (ormProperties.primaryKey != null) {
+				// TODO: error
+				throw new Error();
+			}
+			ormProperties.primaryKey = field;
+		}
 
 		if (field.exclusivity !== FieldExclusion.EXCLUDE) {
 			defaultFields.add(field);

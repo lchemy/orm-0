@@ -8,10 +8,15 @@ export { config, knex } from "./config/knex";
 export { define } from "./definitions";
 export {
 	FindAllQuery, FindAllWithCountResult, FindOneQuery, UpdateQuery,
-	findAll, findAllWithCount, findCount, findOne, insert, insertOne, remove, update
+	findAll, findAllWithCount, findById, findByIds, findCount, findOne, insert, insertOne, remove, removeModel, removeModels, update, updateModel, updateModels
 } from "./queries";
 
 export namespace field {
+	export namespace primary {
+		export type Numerical = NumericalField<Orm>;
+		export type String = StringField<Orm>;
+	}
+
 	export type Boolean = BooleanField<Orm>;
 	export type Enum<T> = EnumField<Orm, T>;
 	export type Numerical = NumericalField<Orm>;

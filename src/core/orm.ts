@@ -13,6 +13,8 @@ export interface OrmProperties {
 
 	path: string[];
 
+	primaryKey?: Field<Orm, number | string>;
+
 	root: Orm;
 	base: Orm;
 	parent?: Orm;

@@ -4,18 +4,26 @@ export class FieldDefinition<T> {
 	type: FieldType;
 	column: string;
 	exclusivity: FieldExclusion;
+	primary: boolean;
 	mapper?: FieldMapper<T>;
 
-	constructor(type: FieldType, column: string, exclusivity: FieldExclusion, mapper?: FieldMapper<T>) {
+	constructor(type: FieldType, column: string, exclusivity: FieldExclusion, mapper?: FieldMapper<T>, primary?: boolean) {
 		this.type = type;
 		this.column = column;
 		this.exclusivity = exclusivity;
 		this.mapper = mapper;
+		this.primary = !!primary;
 	}
 }
 
 export type FieldDefiner<T> = (column: string, exclusivity?: FieldExclusion | boolean, mapper?: FieldMapper<T> | string) => FieldDefinition<T>;
+export interface PrimaryFieldDefinitions {
+	Numerical: FieldDefiner<number>;
+	String: FieldDefiner<string>;
+}
 export interface FieldDefinitions {
+	primary: PrimaryFieldDefinitions;
+
 	Boolean: FieldDefiner<boolean>;
 	Enum: FieldDefiner<any>;
 	Numerical: FieldDefiner<number>;
@@ -54,11 +62,22 @@ export function normalizeMapper<T>(mapper?: FieldMapper<T> | string): FieldMappe
 
 function fieldDefinitionFor<T>(type: FieldType): FieldDefiner<T> {
 	return (column: string, exclusivity?: FieldExclusion | boolean, mapper?: FieldMapper<T> | string) => {
-		return new FieldDefinition<T>(type, column, normalizeExclusivity(exclusivity), normalizeMapper(mapper));
+		return new FieldDefinition<T>(type, column, normalizeExclusivity(exclusivity), normalizeMapper(mapper), false);
+	};
+}
+
+function primaryFieldDefinitionFor<T>(type: FieldType): FieldDefiner<T> {
+	return (column: string) => {
+		return new FieldDefinition<T>(type, column, FieldExclusion.INCLUDE, undefined, true);
 	};
 }
 
 export const fieldDefinitions: FieldDefinitions = {
+	primary: {
+		Numerical: primaryFieldDefinitionFor<number>(FieldType.NUMERICAL),
+		String: primaryFieldDefinitionFor<string>(FieldType.STRING)
+	},
+
 	Boolean: fieldDefinitionFor<boolean>(FieldType.BOOLEAN),
 	Enum: fieldDefinitionFor<any>(FieldType.ENUM),
 	Numerical: fieldDefinitionFor<number>(FieldType.NUMERICAL),

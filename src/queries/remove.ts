@@ -1,7 +1,7 @@
 import * as Knex from "knex";
 
 import { knex } from "../config/knex";
-import { BoundedOrmAuthBuilder, Filter, Orm, OrmProperties } from "../core";
+import { BoundedOrmAuthBuilder, Field, Filter, Orm, OrmProperties } from "../core";
 import { AttachFilterMode, attachFilter, getOrm, withTransaction } from "./helpers";
 
 export function remove<O extends Orm>(
@@ -33,5 +33,35 @@ export function remove<O extends Orm>(
 		return withTransaction((tx) => {
 			return (knex.raw(modifiedSql, sql.bindings) as any as Knex.QueryInterface).transacting(tx).then((res) => res[0].affectedRows) as any as Promise<number>;
 		}, trx);
+	});
+}
+
+export function removeModels<O extends Orm>(
+	ref: string | symbol | O,
+	models: Object[],
+	auth?: any,
+	trx?: Knex.Transaction
+): Promise<number> {
+	return remove(ref, (orm) => {
+		let ormProperties: OrmProperties = Orm.getProperties(orm),
+			primaryKey: Field<O, number | string> = ormProperties.primaryKey!;
+
+		let ids: (number | string)[] = models.map((model) => primaryKey.mapper(model));
+		return primaryKey.in(...ids);
+	}, auth, trx);
+}
+
+export function removeModel<O extends Orm>(
+	ref: string | symbol | O,
+	model: Object,
+	auth?: any,
+	trx?: Knex.Transaction
+): Promise<undefined> {
+	return removeModels(ref, [model], auth, trx).then((count) => {
+		if (count === 0) {
+			// TODO: error
+			return Promise.reject<undefined>(undefined);
+		}
+		return undefined;
 	});
 }

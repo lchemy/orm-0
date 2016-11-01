@@ -55,13 +55,13 @@ export interface AuthUser {
 }
 
 export interface ContinentOrm extends Orm {
-	id: field.Numerical;
+	id: field.primary.Numerical;
 	name: field.String;
 
 	countries: join.Many<CountryOrm>;
 }
 export interface CountryOrm extends Orm {
-	id: field.Numerical;
+	id: field.primary.Numerical;
 	code: field.String;
 	name: field.String;
 
@@ -77,7 +77,7 @@ export interface CountryOrm extends Orm {
 	languages: join.Many<LanguageOrm>;
 }
 export interface StateOrm extends Orm {
-	id: field.Numerical;
+	id: field.primary.Numerical;
 	code: field.String;
 	name: field.String;
 
@@ -87,7 +87,7 @@ export interface StateOrm extends Orm {
 	cities: join.Many<CityOrm>;
 }
 export interface CityOrm extends Orm {
-	id: field.Numerical;
+	id: field.primary.Numerical;
 	code: field.String;
 	name: field.String;
 
@@ -96,7 +96,7 @@ export interface CityOrm extends Orm {
 }
 
 export interface LanguageOrm extends Orm {
-	id: field.Numerical;
+	id: field.primary.Numerical;
 	name: field.String;
 
 	countries: join.Many<CountryOrm>;
@@ -117,7 +117,7 @@ export type Definitions = {
 export const definitions: Promise<Definitions> = Promise.all([
 	define<ContinentOrm, Continent, AuthUser>("continents", (field, join) => {
 		return {
-			id: field.Numerical("id"),
+			id: field.primary.Numerical("id"),
 			name: field.String("name"),
 
 			countries: join.Many<CountryOrm>("countries", false, true).on((country, continent) => {
@@ -137,7 +137,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 	}),
 	define<CountryOrm, Country>("countries", (field, join) => {
 		return {
-			id: field.Numerical("id"),
+			id: field.primary.Numerical("id"),
 			name: field.String("name"),
 			metrics: {
 				population: field.Numerical("population"),
@@ -161,7 +161,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 	}),
 	define<StateOrm, State>("states", (field, join) => {
 		return {
-			id: field.Numerical("id"),
+			id: field.primary.Numerical("id"),
 			name: field.String("name"),
 
 			countryId: field.Numerical("country_id", undefined, "country.id"),
@@ -176,7 +176,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 	}),
 	define<CityOrm, City>("cities", (field, join) => {
 		return {
-			id: field.Numerical("id"),
+			id: field.primary.Numerical("id"),
 			name: field.String("name"),
 
 			stateId: field.Numerical("state_id", undefined, "state.id"),
@@ -187,7 +187,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 	}),
 	define<LanguageOrm, Language>("languages", (field, join) => {
 		return {
-			id: field.Numerical("id"),
+			id: field.primary.Numerical("id"),
 			name: field.String("name"),
 
 			countries: join.Many<CountryOrm>("countries").through<CountriesLanguagesJoinOrm>("countries_languages", (country, countriesLanguagesJoin) => {

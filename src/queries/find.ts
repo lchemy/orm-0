@@ -112,6 +112,44 @@ export function findAllWithCount<O extends Orm>(
 	});
 }
 
+export function findByIds<O extends Orm>(
+	ref: string | symbol | O,
+	ids: number[] | string[],
+	builder: (orm: O) => FindQueryField[],
+	auth?: any,
+	trx?: Knex.Transaction
+): Promise<Object> {
+	return getOrm(ref).then((orm) => {
+		return executeFind(orm, {
+			fields: builder(orm),
+			filter: Orm.getProperties(orm).primaryKey!.in(...ids),
+			auth: auth
+		}, trx);
+	});
+}
+
+export function findById<O extends Orm>(
+	ref: string | symbol | O,
+	id: number | string,
+	builder: (orm: O) => FindQueryField[],
+	auth?: any,
+	trx?: Knex.Transaction
+): Promise<Object> {
+	return getOrm(ref).then((orm) => {
+		return executeFind(orm, {
+			fields: builder(orm),
+			filter: Orm.getProperties(orm).primaryKey!.eq(id),
+			auth: auth
+		}, trx);
+	}).then((rows: Object[]) => {
+		if (rows.length === 0) {
+			// TODO: no rows
+			return Promise.reject(undefined);
+		}
+		return rows[0];
+	});
+}
+
 function normalizeSorts(sorts?: RawFindSortField[]): FindSortField[] | undefined {
 	if (sorts == null || sorts.length === 0) {
 		return;

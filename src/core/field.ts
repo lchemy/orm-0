@@ -47,6 +47,7 @@ export abstract class Field<O extends Orm, T> {
 		return `${ this.tableAs }.${ this.column }`;
 	}
 
+	// TODO: use this with outputs
 	get isAnonymous(): boolean {
 		return Orm.getProperties(this.orm).anonymous;
 	}

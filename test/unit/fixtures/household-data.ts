@@ -1,7 +1,7 @@
 import { Orm, define, field, join } from "../../../src";
 
 export interface PersonOrm extends Orm {
-	id: field.Numerical;
+	id: field.primary.Numerical;
 	name: field.String;
 
 	parentId: field.Numerical;
@@ -12,7 +12,7 @@ export interface PersonOrm extends Orm {
 }
 
 export interface PetOrm extends Orm {
-	id: field.Numerical;
+	id: field.primary.Numerical;
 	name: field.String;
 
 	owners: join.Many<PersonOrm>;
@@ -37,7 +37,7 @@ type Definitions = {
 export const definitions: Promise<Definitions> = Promise.all([
 	define<PersonOrm, Object, AuthUser>("people", (field, join) => {
 		return {
-			id: field.Numerical("id"),
+			id: field.primary.Numerical("id"),
 			name: field.String("name"),
 
 			parentId: field.Numerical("parent_id", false),
@@ -77,7 +77,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 	}),
 	define<PetOrm, Object, AuthUser>("pets", (field, join) => {
 		return {
-			id: field.Numerical("id"),
+			id: field.primary.Numerical("id"),
 			name: field.String("name"),
 
 			owners: join.Many<PersonOrm>("people", true, false).through<PeoplePetsJoinOrm>("people_pets", (owner, peoplePets) => {
