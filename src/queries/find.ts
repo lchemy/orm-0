@@ -15,17 +15,15 @@ export interface FindAllQuery extends FindOneQuery {
 	pagination?: { offset?: number, limit?: number };
 }
 
-export interface FindAllWithCountResult {
-	rows: Object[];
+export interface FindAllWithCountResult<M> {
+	rows: M[];
 	count: number;
 }
 
-export function findOne<O extends Orm>(
-	ref: string | symbol | O,
-	builder?: (orm: O) => FindOneQuery,
-	auth?: any,
-	trx?: Knex.Transaction
-): Promise<Object> {
+export function findOne<O extends Orm>(ref: string | symbol | O, builder?: (orm: O) => FindOneQuery, auth?: any, trx?: Knex.Transaction): Promise<Object>;
+export function findOne<O extends Orm, M>(ref: string | symbol | O, builder?: (orm: O) => FindOneQuery, auth?: any, trx?: Knex.Transaction): Promise<M>;
+export function findOne<O extends Orm, M, A>(ref: string | symbol | O, builder?: (orm: O) => FindOneQuery, auth?: A, trx?: Knex.Transaction): Promise<M>;
+export function findOne<O extends Orm, M, A>(ref: string | symbol | O, builder?: (orm: O) => FindOneQuery, auth?: A, trx?: Knex.Transaction): Promise<M> {
 	return getOrm(ref).then((orm) => {
 		let query: FindOneQuery = builder != null ? builder(orm) : {};
 
@@ -43,12 +41,10 @@ export function findOne<O extends Orm>(
 	});
 }
 
-export function findAll<O extends Orm>(
-	ref: string | symbol | O,
-	builder?: (orm: O) => FindAllQuery,
-	auth?: any,
-	trx?: Knex.Transaction
-): Promise<Object[]> {
+export function findAll<O extends Orm>(ref: string | symbol | O, builder?: (orm: O) => FindAllQuery, auth?: any, trx?: Knex.Transaction): Promise<Object[]>;
+export function findAll<O extends Orm, M>(ref: string | symbol | O, builder?: (orm: O) => FindAllQuery, auth?: any, trx?: Knex.Transaction): Promise<M[]>;
+export function findAll<O extends Orm, M, A>(ref: string | symbol | O, builder?: (orm: O) => FindAllQuery, auth?: A, trx?: Knex.Transaction): Promise<M[]>;
+export function findAll<O extends Orm, M, A>(ref: string | symbol | O, builder?: (orm: O) => FindAllQuery, auth?: A, trx?: Knex.Transaction): Promise<M[]> {
 	return getOrm(ref).then((orm) => {
 		let query: FindAllQuery = builder != null ? builder(orm) : {};
 
@@ -62,12 +58,9 @@ export function findAll<O extends Orm>(
 	});
 }
 
-export function findCount<O extends Orm>(
-	ref: string | symbol | O,
-	builder?: (orm: O) => Filter,
-	auth?: any,
-	trx?: Knex.Transaction
-): Promise<number> {
+export function findCount<O extends Orm>(ref: string | symbol | O, builder?: (orm: O) => Filter, auth?: any, trx?: Knex.Transaction): Promise<number>;
+export function findCount<O extends Orm, A>(ref: string | symbol | O, builder?: (orm: O) => Filter, auth?: A, trx?: Knex.Transaction): Promise<number>;
+export function findCount<O extends Orm, A>(ref: string | symbol | O, builder?: (orm: O) => Filter, auth?: A, trx?: Knex.Transaction): Promise<number> {
 	return getOrm(ref).then((orm) => {
 		let filter: Filter | undefined = builder != null ? builder(orm) : undefined;
 		return executeFind(orm, {
@@ -79,11 +72,17 @@ export function findCount<O extends Orm>(
 }
 
 export function findAllWithCount<O extends Orm>(
-	ref: string | symbol | O,
-	builder?: (orm: O) => FindAllQuery,
-	auth?: any,
-	trx?: Knex.Transaction
-): Promise<FindAllWithCountResult> {
+	ref: string | symbol | O, builder?: (orm: O) => FindAllQuery, auth?: any, trx?: Knex.Transaction
+): Promise<FindAllWithCountResult<Object>>;
+export function findAllWithCount<O extends Orm, M>(
+	ref: string | symbol | O, builder?: (orm: O) => FindAllQuery, auth?: any, trx?: Knex.Transaction
+): Promise<FindAllWithCountResult<M>>;
+export function findAllWithCount<O extends Orm, M, A>(
+	ref: string | symbol | O, builder?: (orm: O) => FindAllQuery, auth?: A, trx?: Knex.Transaction
+): Promise<FindAllWithCountResult<M>>;
+export function findAllWithCount<O extends Orm, M, A>(
+	ref: string | symbol | O, builder?: (orm: O) => FindAllQuery, auth?: A, trx?: Knex.Transaction
+): Promise<FindAllWithCountResult<M>> {
 	return getOrm(ref).then((orm) => {
 		let query: FindAllQuery = builder != null ? builder(orm) : {};
 
@@ -114,12 +113,17 @@ export function findAllWithCount<O extends Orm>(
 }
 
 export function findByIds<O extends Orm>(
-	ref: string | symbol | O,
-	ids: number[] | string[],
-	builder?: (orm: O) => FindQueryField[],
-	auth?: any,
-	trx?: Knex.Transaction
-): Promise<Object> {
+	ref: string | symbol | O, ids: number[] | string[], builder?: (orm: O) => FindQueryField[], auth?: any, trx?: Knex.Transaction
+): Promise<Object>;
+export function findByIds<O extends Orm, M>(
+	ref: string | symbol | O, ids: number[] | string[], builder?: (orm: O) => FindQueryField[], auth?: any, trx?: Knex.Transaction
+): Promise<M>;
+export function findByIds<O extends Orm, M, A>(
+	ref: string | symbol | O, ids: number[] | string[], builder?: (orm: O) => FindQueryField[], auth?: A, trx?: Knex.Transaction
+): Promise<M>;
+export function findByIds<O extends Orm, M, A>(
+	ref: string | symbol | O, ids: number[] | string[], builder?: (orm: O) => FindQueryField[], auth?: A, trx?: Knex.Transaction
+): Promise<M> {
 	return getOrm(ref).then((orm) => {
 		return executeFind(orm, {
 			fields: builder != null ? builder(orm) : undefined,
@@ -130,12 +134,17 @@ export function findByIds<O extends Orm>(
 }
 
 export function findById<O extends Orm>(
-	ref: string | symbol | O,
-	id: number | string,
-	builder?: (orm: O) => FindQueryField[],
-	auth?: any,
-	trx?: Knex.Transaction
-): Promise<Object> {
+	ref: string | symbol | O, id: number | string, builder?: (orm: O) => FindQueryField[], auth?: any, trx?: Knex.Transaction
+): Promise<Object>;
+export function findById<O extends Orm, M>(
+	ref: string | symbol | O, id: number | string, builder?: (orm: O) => FindQueryField[], auth?: any, trx?: Knex.Transaction
+): Promise<M>;
+export function findById<O extends Orm, M, A>(
+	ref: string | symbol | O, id: number | string, builder?: (orm: O) => FindQueryField[], auth?: A, trx?: Knex.Transaction
+): Promise<M>;
+export function findById<O extends Orm, M, A>(
+	ref: string | symbol | O, id: number | string, builder?: (orm: O) => FindQueryField[], auth?: A, trx?: Knex.Transaction
+): Promise<M> {
 	return getOrm(ref).then((orm) => {
 		return executeFind(orm, {
 			fields: builder != null ? builder(orm) : undefined,

@@ -5,12 +5,9 @@ import { Field, Orm } from "../core";
 import { getOrm, withTransaction } from "./helpers";
 
 // TODO: make it take a type for models?
-export function insert<O extends Orm>(
-	ref: string | symbol | O,
-	builder: (orm: O) => Field<O, any>[],
-	models: Object[],
-	trx?: Knex.Transaction
-): Promise<number[]> {
+export function insert<O extends Orm>(ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], models: Object[], trx?: Knex.Transaction): Promise<number[]>;
+export function insert<O extends Orm, M>(ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], models: M[], trx?: Knex.Transaction): Promise<number[]>;
+export function insert<O extends Orm, M>(ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], models: M[], trx?: Knex.Transaction): Promise<number[]> {
 	if (models.length === 0) {
 		return Promise.resolve([]);
 	}
@@ -42,11 +39,8 @@ export function insert<O extends Orm>(
 	});
 }
 
-export function insertOne<O extends Orm, M extends Object>(
-	ref: string | symbol | O,
-	builder: (orm: O) => Field<O, any>[],
-	model: Object,
-	trx?: Knex.Transaction
-): Promise<number> {
+export function insertOne<O extends Orm>(ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], model: Object, trx?: Knex.Transaction): Promise<number>;
+export function insertOne<O extends Orm, M>(ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], model: M, trx?: Knex.Transaction): Promise<number>;
+export function insertOne<O extends Orm, M>(ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], model: M, trx?: Knex.Transaction): Promise<number> {
 	return insert(ref, builder, [model], trx).then((res) => res[0]);
 }

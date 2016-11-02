@@ -17,9 +17,9 @@ export type OrmSchemaBuilder<O extends Orm> = (field: FieldDefinitions, join: Jo
 
 export type OrmAuthBuilder<A, O extends Orm> = (auth: A, orm: O) => Filter | undefined;
 
-export function define<O extends Orm, M extends Object>(definition: OrmDefinition | string, schemaBuilder: OrmSchemaBuilder<O>): Promise<O>;
-export function define<O extends Orm, M extends Object, A>(definition: OrmDefinition | string, schemaBuilder: OrmSchemaBuilder<O>, authBuilder: OrmAuthBuilder<A, O>): Promise<O>;
-export function define<O extends Orm, M extends Object, A>(definition: OrmDefinition | string, schemaBuilder: OrmSchemaBuilder<O>, authBuilder?: OrmAuthBuilder<A, O>): Promise<O> {
+export function define<O extends Orm, M>(definition: OrmDefinition | string, schemaBuilder: OrmSchemaBuilder<O>): Promise<O>;
+export function define<O extends Orm, M, A>(definition: OrmDefinition | string, schemaBuilder: OrmSchemaBuilder<O>, authBuilder: OrmAuthBuilder<A, O>): Promise<O>;
+export function define<O extends Orm, M, A>(definition: OrmDefinition | string, schemaBuilder: OrmSchemaBuilder<O>, authBuilder?: OrmAuthBuilder<A, O>): Promise<O> {
 	let parsedDefinition: OrmDefinition = parseOrmDefinition(definition);
 
 	let schema: OrmSchema<O> = schemaBuilder(fieldDefinitions, joinDefinitions);
