@@ -22,12 +22,13 @@ export interface FindAllWithCountResult {
 
 export function findOne<O extends Orm>(
 	ref: string | symbol | O,
-	builder: (orm: O) => FindOneQuery,
+	builder?: (orm: O) => FindOneQuery,
 	auth?: any,
 	trx?: Knex.Transaction
 ): Promise<Object> {
 	return getOrm(ref).then((orm) => {
-		let query: FindOneQuery = builder(orm);
+		let query: FindOneQuery = builder != null ? builder(orm) : {};
+
 		return executeFind(orm, {
 			fields: query.fields,
 			filter: query.filter,
@@ -44,12 +45,12 @@ export function findOne<O extends Orm>(
 
 export function findAll<O extends Orm>(
 	ref: string | symbol | O,
-	builder: (orm: O) => FindAllQuery,
+	builder?: (orm: O) => FindAllQuery,
 	auth?: any,
 	trx?: Knex.Transaction
 ): Promise<Object[]> {
 	return getOrm(ref).then((orm) => {
-		let query: FindAllQuery = builder(orm);
+		let query: FindAllQuery = builder != null ? builder(orm) : {};
 
 		return executeFind(orm, {
 			fields: query.fields,
@@ -63,12 +64,12 @@ export function findAll<O extends Orm>(
 
 export function findCount<O extends Orm>(
 	ref: string | symbol | O,
-	builder: (orm: O) => Filter,
+	builder?: (orm: O) => Filter,
 	auth?: any,
 	trx?: Knex.Transaction
 ): Promise<number> {
 	return getOrm(ref).then((orm) => {
-		let filter: Filter = builder(orm);
+		let filter: Filter | undefined = builder != null ? builder(orm) : undefined;
 		return executeFind(orm, {
 			count: true,
 			filter: filter,
@@ -79,12 +80,12 @@ export function findCount<O extends Orm>(
 
 export function findAllWithCount<O extends Orm>(
 	ref: string | symbol | O,
-	builder: (orm: O) => FindAllQuery,
+	builder?: (orm: O) => FindAllQuery,
 	auth?: any,
 	trx?: Knex.Transaction
 ): Promise<FindAllWithCountResult> {
 	return getOrm(ref).then((orm) => {
-		let query: FindAllQuery = builder(orm);
+		let query: FindAllQuery = builder != null ? builder(orm) : {};
 
 		let rowsPromise: Promise<Object[]> = executeFind(orm, {
 			fields: query.fields,
@@ -115,13 +116,13 @@ export function findAllWithCount<O extends Orm>(
 export function findByIds<O extends Orm>(
 	ref: string | symbol | O,
 	ids: number[] | string[],
-	builder: (orm: O) => FindQueryField[],
+	builder?: (orm: O) => FindQueryField[],
 	auth?: any,
 	trx?: Knex.Transaction
 ): Promise<Object> {
 	return getOrm(ref).then((orm) => {
 		return executeFind(orm, {
-			fields: builder(orm),
+			fields: builder != null ? builder(orm) : undefined,
 			filter: Orm.getProperties(orm).primaryKey!.in(...ids),
 			auth: auth
 		}, trx);
@@ -131,13 +132,13 @@ export function findByIds<O extends Orm>(
 export function findById<O extends Orm>(
 	ref: string | symbol | O,
 	id: number | string,
-	builder: (orm: O) => FindQueryField[],
+	builder?: (orm: O) => FindQueryField[],
 	auth?: any,
 	trx?: Knex.Transaction
 ): Promise<Object> {
 	return getOrm(ref).then((orm) => {
 		return executeFind(orm, {
-			fields: builder(orm),
+			fields: builder != null ? builder(orm) : undefined,
 			filter: Orm.getProperties(orm).primaryKey!.eq(id),
 			auth: auth
 		}, trx);
@@ -150,6 +151,7 @@ export function findById<O extends Orm>(
 	});
 }
 
+// TODO: move to helpers
 function normalizeSorts(sorts?: RawFindSortField[]): FindSortField[] | undefined {
 	if (sorts == null || sorts.length === 0) {
 		return;

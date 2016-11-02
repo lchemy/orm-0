@@ -132,7 +132,7 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 				offset = Math.max(0, query.pagination.offset);
 			}
 			if (query.pagination.limit != null) {
-				limit = Math.max(0, Math.min(query.pagination.limit, 500));
+				limit = Math.max(0, query.pagination.limit);
 			}
 		}
 		builder.offset(offset);

@@ -62,7 +62,6 @@ export interface ContinentOrm extends Orm {
 }
 export interface CountryOrm extends Orm {
 	id: field.primary.Numerical;
-	code: field.String;
 	name: field.String;
 
 	metrics: {
@@ -78,7 +77,6 @@ export interface CountryOrm extends Orm {
 }
 export interface StateOrm extends Orm {
 	id: field.primary.Numerical;
-	code: field.String;
 	name: field.String;
 
 	countryId: field.Numerical;
@@ -88,7 +86,6 @@ export interface StateOrm extends Orm {
 }
 export interface CityOrm extends Orm {
 	id: field.primary.Numerical;
-	code: field.String;
 	name: field.String;
 
 	stateId: field.Numerical;
