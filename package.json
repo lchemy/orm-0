@@ -3,10 +3,14 @@
   "version": "0.0.1",
   "description": "",
   "author": "Jesse Zhang (http://jessezhang.me/)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lchemy/orm.git"
+  },
   "scripts": {
     "prebuild": "del-cli ./dist",
     "build": "tsc -p ./tsconfig.build.json",
-    "postbuild": "node ./scripts/copy-package",
+    "postbuild": "node ./scripts/copy-package && node ./scripts/copy-dist-files",
     "lint": "tslint -c tslint.json --project tsconfig.json -t stylish",
     "pretest": "tsc -p ./tsconfig.test.json",
     "test": "mocha --ui bdd --require ./.test-tmp/test/bootstrap ./.test-tmp/test/**/*.spec.js",

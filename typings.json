@@ -1,5 +1,5 @@
 {
-  "name": "worm.js",
+  "name": "@lchemy/orm",
   "dependencies": {},
   "globalDependencies": {
     "bluebird": "registry:dt/bluebird#3.0.0+20160928162057",
