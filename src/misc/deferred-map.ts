@@ -60,4 +60,15 @@ export class DeferredMap<K, V> {
 	has(key: K): boolean {
 		return this.map.has(key);
 	}
+
+	awaitAll(): Promise<void> {
+		return new Promise<void>((resolve) => {
+			setTimeout(() => {
+				let promises: Promise<any>[] = Array.from(this.map.values()).map((entry) => entry.promise);
+				Promise.all(promises).then(() => {
+					resolve();
+				});
+			});
+		});
+	}
 }

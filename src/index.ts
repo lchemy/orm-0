@@ -3,6 +3,7 @@ import {
 	BinaryField, BooleanField, CompositeField, CompositeProperties, DateField,
 	EnumField, Field, JoinManyField, NumericalField, Orm, OrmProperties, StringField
 } from "./core";
+import { ORM_INSTANCES_CACHE } from "./misc/cache";
 
 export { config, knex } from "./config/knex";
 export { define } from "./definitions";
@@ -46,3 +47,7 @@ interface OrmLike extends Orm {
 export {
 	OrmLike as Orm
 };
+
+export function awaitOrmsReady(): Promise<void> {
+	return ORM_INSTANCES_CACHE.awaitAll();
+}
