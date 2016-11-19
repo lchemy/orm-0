@@ -114,16 +114,16 @@ export function findAllWithCount<O extends Orm, M, A>(
 
 export function findByIds<O extends Orm>(
 	ref: string | symbol | O, ids: number[] | string[], builder?: (orm: O) => FindQueryField[], auth?: any, trx?: Knex.Transaction
-): Promise<Object>;
+): Promise<Object[]>;
 export function findByIds<O extends Orm, M>(
 	ref: string | symbol | O, ids: number[] | string[], builder?: (orm: O) => FindQueryField[], auth?: any, trx?: Knex.Transaction
-): Promise<M>;
+): Promise<M[]>;
 export function findByIds<O extends Orm, M, A>(
 	ref: string | symbol | O, ids: number[] | string[], builder?: (orm: O) => FindQueryField[], auth?: A, trx?: Knex.Transaction
-): Promise<M>;
+): Promise<M[]>;
 export function findByIds<O extends Orm, M, A>(
 	ref: string | symbol | O, ids: number[] | string[], builder?: (orm: O) => FindQueryField[], auth?: A, trx?: Knex.Transaction
-): Promise<M> {
+): Promise<M[]> {
 	return getOrm(ref).then((orm) => {
 		return executeFind(orm, {
 			fields: builder != null ? builder(orm) : undefined,
