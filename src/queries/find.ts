@@ -20,10 +20,10 @@ export interface FindAllWithCountResult<M> {
 	count: number;
 }
 
-export function findOne<O extends Orm>(ref: string | symbol | O, builder?: (orm: O) => FindOneQuery, auth?: any, trx?: Knex.Transaction): Promise<Object>;
-export function findOne<O extends Orm, M>(ref: string | symbol | O, builder?: (orm: O) => FindOneQuery, auth?: any, trx?: Knex.Transaction): Promise<M>;
-export function findOne<O extends Orm, M, A>(ref: string | symbol | O, builder?: (orm: O) => FindOneQuery, auth?: A, trx?: Knex.Transaction): Promise<M>;
-export function findOne<O extends Orm, M, A>(ref: string | symbol | O, builder?: (orm: O) => FindOneQuery, auth?: A, trx?: Knex.Transaction): Promise<M> {
+export function findOne<O extends Orm>(ref: string | symbol | O, builder?: (orm: O) => FindOneQuery, auth?: any, trx?: Knex.Transaction): Promise<Object | undefined>;
+export function findOne<O extends Orm, M>(ref: string | symbol | O, builder?: (orm: O) => FindOneQuery, auth?: any, trx?: Knex.Transaction): Promise<M | undefined>;
+export function findOne<O extends Orm, M, A>(ref: string | symbol | O, builder?: (orm: O) => FindOneQuery, auth?: A, trx?: Knex.Transaction): Promise<M | undefined>;
+export function findOne<O extends Orm, M, A>(ref: string | symbol | O, builder?: (orm: O) => FindOneQuery, auth?: A, trx?: Knex.Transaction): Promise<M | undefined> {
 	return getOrm(ref).then((orm) => {
 		let query: FindOneQuery = builder != null ? builder(orm) : {};
 
@@ -33,10 +33,6 @@ export function findOne<O extends Orm, M, A>(ref: string | symbol | O, builder?:
 			auth: auth
 		}, trx);
 	}).then((rows: Object[]) => {
-		if (rows.length === 0) {
-			// TODO: no rows
-			return Promise.reject(undefined);
-		}
 		return rows[0];
 	});
 }
@@ -135,16 +131,16 @@ export function findByIds<O extends Orm, M, A>(
 
 export function findById<O extends Orm>(
 	ref: string | symbol | O, id: number | string, builder?: (orm: O) => FindQueryField[], auth?: any, trx?: Knex.Transaction
-): Promise<Object>;
+): Promise<Object | undefined>;
 export function findById<O extends Orm, M>(
 	ref: string | symbol | O, id: number | string, builder?: (orm: O) => FindQueryField[], auth?: any, trx?: Knex.Transaction
-): Promise<M>;
+): Promise<M | undefined>;
 export function findById<O extends Orm, M, A>(
 	ref: string | symbol | O, id: number | string, builder?: (orm: O) => FindQueryField[], auth?: A, trx?: Knex.Transaction
-): Promise<M>;
+): Promise<M | undefined>;
 export function findById<O extends Orm, M, A>(
 	ref: string | symbol | O, id: number | string, builder?: (orm: O) => FindQueryField[], auth?: A, trx?: Knex.Transaction
-): Promise<M> {
+): Promise<M | undefined> {
 	return getOrm(ref).then((orm) => {
 		return executeFind(orm, {
 			fields: builder != null ? builder(orm) : undefined,
@@ -152,10 +148,6 @@ export function findById<O extends Orm, M, A>(
 			auth: auth
 		}, trx);
 	}).then((rows: Object[]) => {
-		if (rows.length === 0) {
-			// TODO: no rows
-			return Promise.reject(undefined);
-		}
 		return rows[0];
 	});
 }
@@ -174,7 +166,7 @@ function normalizeSorts(sorts?: RawFindSortField[]): FindSortField[] | undefined
 		}
 		return {
 			field: field.field,
-			direction: field.direction ? normalizeSortDirection(field.direction) : SortDirection.ASCENDING
+			direction: field.direction != null ? normalizeSortDirection(field.direction) : SortDirection.ASCENDING
 		};
 	});
 }

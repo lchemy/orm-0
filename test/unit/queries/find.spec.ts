@@ -226,7 +226,7 @@ describe("find queries", () => {
 
 	it("should reject and not find state by id that doesn't exist", () => {
 		return findById<StateOrm>("states", 0).then(() => {
-			expect.fail("should ")
+			expect.fail("should not be resolved");
 		}).then(() => {
 			expect.fail("should not be resolved");
 		}).catch(() => {

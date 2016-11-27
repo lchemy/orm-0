@@ -1,6 +1,6 @@
 {
   "name": "@lchemy/orm",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "",
   "author": "Jesse Zhang (http://jessezhang.me/)",
   "repository": {
@@ -8,7 +8,7 @@
     "url": "https://github.com/lchemy/orm.git"
   },
   "scripts": {
-    "prebuild": "del-cli ./dist",
+    "prebuild": "del-cli ./dist && npm run test && npm run lint",
     "build": "tsc -p ./tsconfig.build.json",
     "postbuild": "node ./scripts/copy-package && node ./scripts/copy-dist-files",
     "lint": "tslint -c tslint.json --project tsconfig.json -t stylish",

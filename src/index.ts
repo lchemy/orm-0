@@ -11,7 +11,7 @@ export {
 	FindAllQuery, FindAllWithCountResult, FindOneQuery, UpdateQuery,
 	findAll, findAllWithCount, findById, findByIds, findCount, findOne, insert, insertOne, remove, removeModel, removeModels, update, updateModel, updateModels
 } from "./queries";
-export { getOrm } from "./queries/helpers";
+export { getOrm, withTransaction } from "./queries/helpers";
 
 export namespace field {
 	export namespace primary {

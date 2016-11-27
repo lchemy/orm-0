@@ -71,7 +71,11 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 		});
 
 		fieldOrms.forEach((fieldOrm) => {
-			ormFieldsMap.get(fieldOrm).forEach((field) => {
+			let ormFields: Set<Field<any, any>> | undefined = ormFieldsMap.get(fieldOrm);
+			if (ormFields == null) {
+				return;
+			}
+			ormFields.forEach((field) => {
 				fields.add(field);
 			});
 		});
@@ -89,6 +93,9 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 		let namedColumns: string[] = Array.from(fields).map((field) => {
 			return `${field.aliasedColumn} AS ${field.columnAs}`;
 		});
+		if (namedColumns.length === 0) {
+			namedColumns.push(`1 AS ${ ormProperties.tableAs }.__`);
+		}
 		builder.select(namedColumns);
 	}
 
@@ -240,11 +247,6 @@ function getOrmFieldsMap(fields: Set<Field<any, any>>, orm: Orm, baseOrm: Orm): 
 		ormProperties.join.many.requiredJoinFields.forEach((field) => {
 			addToOrmFieldsMap(field, orm, baseOrm, ormFieldsMap);
 		});
-	}
-
-	if (!ormFieldsMap.has(orm) || ormFieldsMap.get(orm).size === 0) {
-		// TODO: not selecting anything
-		throw new Error();
 	}
 
 	return ormFieldsMap;

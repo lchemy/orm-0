@@ -17,10 +17,18 @@ interface UpdateModel {
 	data: UpdateModelData;
 };
 
-export function update<O extends Orm>(ref: string | symbol | O, builder: (orm: O) => UpdateQuery<O>, model: Object, auth?: any, trx?: Knex.Transaction): Promise<number>;
-export function update<O extends Orm, M>(ref: string | symbol | O, builder: (orm: O) => UpdateQuery<O>, model: M, auth?: any, trx?: Knex.Transaction): Promise<number>;
-export function update<O extends Orm, M, A>(ref: string | symbol | O, builder: (orm: O) => UpdateQuery<O>, model: M, auth?: A, trx?: Knex.Transaction): Promise<number>;
-export function update<O extends Orm, M, A>(ref: string | symbol | O, builder: (orm: O) => UpdateQuery<O>, model: M, auth?: A, trx?: Knex.Transaction): Promise<number> {
+export function update<O extends Orm>(
+	ref: string | symbol | O, builder: (orm: O) => UpdateQuery<O>, model: Object, auth?: any, trx?: Knex.Transaction
+): Promise<number>;
+export function update<O extends Orm, M>(
+	ref: string | symbol | O, builder: (orm: O) => UpdateQuery<O>, model: M, auth?: any, trx?: Knex.Transaction
+): Promise<number>;
+export function update<O extends Orm, M, A>(
+	ref: string | symbol | O, builder: (orm: O) => UpdateQuery<O>, model: M, auth?: A, trx?: Knex.Transaction
+): Promise<number>;
+export function update<O extends Orm, M, A>(
+	ref: string | symbol | O, builder: (orm: O) => UpdateQuery<O>, model: M, auth?: A, trx?: Knex.Transaction
+): Promise<number> {
 	return getOrm(ref).then((orm) => {
 		let ormProperties: OrmProperties = Orm.getProperties(orm),
 			table: string = ormProperties.table,
@@ -47,10 +55,18 @@ export function update<O extends Orm, M, A>(ref: string | symbol | O, builder: (
 	});
 }
 
-export function updateModels<O extends Orm>(ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], models: Object[], auth?: any, trx?: Knex.Transaction): Promise<number>;
-export function updateModels<O extends Orm, M>(ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], models: M[], auth?: any, trx?: Knex.Transaction): Promise<number>;
-export function updateModels<O extends Orm, M, A>(ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], models: M[], auth?: A, trx?: Knex.Transaction): Promise<number>;
-export function updateModels<O extends Orm, M, A>(ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], models: M[], auth?: A, trx?: Knex.Transaction): Promise<number> {
+export function updateModels<O extends Orm>(
+	ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], models: Object[], auth?: any, trx?: Knex.Transaction
+): Promise<number[] | string[]>;
+export function updateModels<O extends Orm, M>(
+	ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], models: M[], auth?: any, trx?: Knex.Transaction
+): Promise<number[] | string[]>;
+export function updateModels<O extends Orm, M, A>(
+	ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], models: M[], auth?: A, trx?: Knex.Transaction
+): Promise<number[] | string[]>;
+export function updateModels<O extends Orm, M, A>(
+	ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], models: M[], auth?: A, trx?: Knex.Transaction
+): Promise<number[] | string[]> {
 	return getOrm(ref).then((orm) => {
 		let ormProperties: OrmProperties = Orm.getProperties(orm),
 			primaryKey: Field<O, number | string> = ormProperties.primaryKey!,
@@ -89,20 +105,31 @@ export function updateModels<O extends Orm, M, A>(ref: string | symbol | O, buil
 						return res + count;
 					}) as any as Promise<number>;
 				});
-			}, Promise.resolve(0));
+			}, Promise.resolve(0)).then<number[] | string[]>((count) => {
+				if (count === 0) {
+					// TODO: error
+					return Promise.reject(undefined);
+				}
+
+				return updateModels.map((m) => m.id) as (number[] | string[]);
+			});
 		});
 	});
 }
 
-export function updateModel<O extends Orm>(ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], model: Object, auth?: any, trx?: Knex.Transaction): Promise<undefined>;
-export function updateModel<O extends Orm, M>(ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], model: M, auth?: any, trx?: Knex.Transaction): Promise<undefined>;
-export function updateModel<O extends Orm, M, A>(ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], model: M, auth?: A, trx?: Knex.Transaction): Promise<undefined>;
-export function updateModel<O extends Orm, M, A>(ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], model: M, auth?: A, trx?: Knex.Transaction): Promise<undefined> {
-	return updateModels(ref, builder, [model], auth, trx).then((count) => {
-		if (count === 0) {
-			// TODO: error
-			return Promise.reject<undefined>(undefined);
-		}
-		return undefined;
+export function updateModel<O extends Orm>(
+	ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], model: Object, auth?: any, trx?: Knex.Transaction
+): Promise<number | string>;
+export function updateModel<O extends Orm, M>(
+	ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], model: M, auth?: any, trx?: Knex.Transaction
+): Promise<number | string>;
+export function updateModel<O extends Orm, M, A>(
+	ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], model: M, auth?: A, trx?: Knex.Transaction
+): Promise<number | string>;
+export function updateModel<O extends Orm, M, A>(
+	ref: string | symbol | O, builder: (orm: O) => Field<O, any>[], model: M, auth?: A, trx?: Knex.Transaction
+): Promise<number | string> {
+	return updateModels(ref, builder, [model], auth, trx).then((ids) => {
+		return ids[0];
 	});
 }
