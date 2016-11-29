@@ -162,10 +162,16 @@ export function zipOrmJoinThrough(orms: Orm[], filters: Filter[]): OrmJoinOn[] {
 	});
 }
 
+// TODO: add builder/definition checks
 function expandFieldsBuilder<O extends Orm>(orm: O, fieldBuilder: JoinFieldsBuilder<O>): Set<Field<any, any>> {
 	let defaultFields: Set<Field<any, any>> = new Set();
 
 	fieldBuilder(orm).forEach((field) => {
+		if (field == null) {
+			// this can occur when two orms join each other and one explicitly refers to the other in fields builder
+			return;
+		}
+
 		if (field instanceof Field) {
 			defaultFields.add(field);
 			return;
@@ -179,7 +185,6 @@ function expandFieldsBuilder<O extends Orm>(orm: O, fieldBuilder: JoinFieldsBuil
 		} else if (field instanceof CompositeField) {
 			addDefaultFields = CompositeField.getProperties(field).defaultFields;
 		} else {
-			// TODO: error
 			throw new Error();
 		}
 

@@ -131,6 +131,7 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 	}
 
 	// LIMIT
+	// TODO: allow limit to be explicitly null
 	if (!query.count && ormProperties.root === orm) {
 		let offset: number = 0,
 			limit: number = 50;

@@ -34,11 +34,7 @@ export abstract class JoinDefinition<O, J> {
 		this.includeJoins = includeJoins;
 	}
 
-	fields(fieldsBuilder: JoinFieldsBuilder<J>): this {
-		this.fieldsBuilder = fieldsBuilder;
-		return this;
-	}
-
+	abstract fields(fieldsBuilder: JoinFieldsBuilder<O | J>): this;
 	abstract through(ref: string | symbol, builder: JoinExpressionBuilder<O | J>): JoinDefinition<O, J>;
 	abstract on(builder: JoinExpressionBuilder<O | J>): this;
 	abstract withAuth<A>(builder: JoinOrmAuthBuilder<A, O | J>): this;
@@ -70,6 +66,11 @@ export class JoinOneDefinition<O extends Orm, J extends Orm> extends JoinDefinit
 	onBuilder: JoinExpressionBuilder<O>;
 	authBuilder?: JoinOrmAuthBuilder<any, O>;
 
+	fields(fieldsBuilder: JoinFieldsBuilder<J>): this {
+		this.fieldsBuilder = fieldsBuilder;
+		return this;
+	}
+
 	through<T1 extends Orm>(ref: string | symbol, builder: JoinExpressionBuilder2<O, T1>): JoinDefinition3<O, T1, J> {
 		this.throughBuilders.push({
 			ref: ref,
@@ -94,6 +95,11 @@ export class JoinManyDefinition<O extends Orm, J extends Orm> extends JoinDefini
 	throughBuilders: JoinThroughBuilder<J>[] = [];
 	onBuilder: JoinExpressionBuilder<J>;
 	authBuilder?: JoinOrmAuthBuilder<any, J>;
+
+	fields(fieldsBuilder: JoinFieldsBuilder<J>): this {
+		this.fieldsBuilder = fieldsBuilder;
+		return this;
+	}
 
 	through<T1 extends Orm>(ref: string | symbol, builder: JoinExpressionBuilder2<J, T1>): JoinDefinition3<J, T1, O> {
 		this.throughBuilders.push({

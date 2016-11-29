@@ -49,7 +49,7 @@ export function update<O extends Orm, M, A>(
 
 		return withTransaction((tx) => {
 			let updateQuery: Knex.QueryBuilder = tx.update(data).table(`${ table } AS root`);
-			attachFilter(updateQuery, filter, AttachFilterMode.WHERE);
+			attachFilter(updateQuery, filter, AttachFilterMode.WHERE); // TODO: need to attach joins, if needed
 			return updateQuery.then((res) => res) as any as Promise<number>;
 		}, trx);
 	});
@@ -100,7 +100,7 @@ export function updateModels<O extends Orm, M, A>(
 					}
 
 					let updateQuery: Knex.QueryBuilder = tx.update(model.data).table(`${ table } AS root`);
-					attachFilter(updateQuery, filter, AttachFilterMode.WHERE);
+					attachFilter(updateQuery, filter, AttachFilterMode.WHERE); // TODO: need to attach joins, if needed
 					return updateQuery.then((res) => {
 						return res + count;
 					}) as any as Promise<number>;

@@ -21,7 +21,7 @@ export function remove<O extends Orm, A>(ref: string | symbol | O, builder: (orm
 		}
 
 		let removeQuery: Knex.QueryBuilder = knex.del().from(`${ table } AS root`);
-		attachFilter(removeQuery, filter, AttachFilterMode.WHERE);
+		attachFilter(removeQuery, filter, AttachFilterMode.WHERE); // TODO: need to attach joins, if needed
 
 		// TODO: file pull request to knex to handle this case
 		let sql: Knex.Sql = removeQuery.toSQL(),

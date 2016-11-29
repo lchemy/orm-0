@@ -62,6 +62,11 @@ function attachFilterInner(builder: Knex.QueryBuilder, filter: Filter, mode: Att
 				throw new Error();
 		}
 
+		// TODO: andWhereExists doesn't exist in knex for some reason, report bug?
+		if (fnName === "andWhereExists") {
+			fnName = "whereExists";
+		}
+
 		return builder[fnName](translateJoinManyFilterNode(filter)) as Knex.QueryBuilder;
 	}
 

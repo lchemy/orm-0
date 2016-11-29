@@ -33,6 +33,10 @@ export function insert<O extends Orm, M>(ref: string | symbol | O, builder: (orm
 			}).then((res) => {
 				let lastId: number = res[0].lastId,
 					inserts: number = res[0].inserts;
+				if (inserts <= 0) {
+					// this can occur if two insert queries came in via the same transaction
+					return [];
+				}
 				return Array(inserts).fill(undefined).map((v, i) => lastId + i);
 			}) as any as Promise<number[]>;
 		}, trx);

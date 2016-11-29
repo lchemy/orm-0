@@ -69,6 +69,7 @@ export function scaffold<O extends Orm>(
 	}, promise);
 
 	if (!includeJoins) {
+		// TODO: add debug code for includeJoins = false but attempting to access them anyway
 		return promise.then(() => obj);
 	}
 
