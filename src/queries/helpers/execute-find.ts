@@ -99,23 +99,73 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 		builder.select(namedColumns);
 	}
 
-	// WHERE
+	// TODO: refactor this part
 	let filter: Filter | undefined = query.filter;
-
-	if (query.auth && ormProperties.auth) {
-		let authFilter: Filter | undefined = ormProperties.auth(query.auth);
-		if (filter == null) {
-			filter = authFilter;
-		} else if (authFilter != null) {
-			filter = authFilter.and(filter);
+	let relatedOrms: Set<Orm> = new Set();
+	let addRelatedOrm: (relatedOrm: Orm) => boolean = (relatedOrm: Orm) => {
+		let relatedOrmProperties: OrmProperties = Orm.getProperties(relatedOrm);
+		if (relatedOrmProperties.base !== baseOrm) {
+			return false;
 		}
-	}
-	if (filter) {
+		if (relatedOrms.has(relatedOrm)) {
+			return true;
+		}
+
+		relatedOrms.add(relatedOrm);
+		if (relatedOrmProperties.join != null) {
+			addJoinOrm(relatedOrm);
+		}
+		if (relatedOrmProperties.auth && query.auth) {
+			addFilter(relatedOrmProperties.auth(query.auth));
+		}
+		if (relatedOrmProperties.parent != null) {
+			addRelatedOrm(relatedOrmProperties.parent);
+		}
+		return true;
+	};
+	let addFilter: (newFilter?: Filter) => void = (newFilter?: Filter) => {
+		if (newFilter == null) {
+			return;
+		}
+
+		if (filter == null) {
+			filter = newFilter;
+		} else {
+			filter = filter.and(newFilter);
+		}
 		filter.fields.filter((field) => {
-			return Orm.getProperties(field.orm).base === baseOrm;
+			return addRelatedOrm(field.orm);
 		}).forEach((field) => {
 			fields.add(field);
 		});
+	};
+	let addJoinOrm: (joinOrm: Orm) => void = (joinOrm: Orm) => {
+		// TODO: this is really add join orms and through orms of current orm
+		let joinOrmProperties: OrmProperties = Orm.getProperties(joinOrm),
+			joins: OrmJoinOn[] = joinOrmProperties.join!.through;
+		if (joinOrm !== orm) {
+			joins = joins.concat([{
+				orm: joinOrm,
+				on: joinOrmProperties.join!.on
+			}]);
+		}
+		joins.forEach((join) => {
+			let innerJoinOrmProperties: OrmProperties = Orm.getProperties(join.orm),
+				innerJoinTableAlias: string = `${ innerJoinOrmProperties.table } AS ${ innerJoinOrmProperties.tableAs }`;
+			builder.leftJoin(innerJoinTableAlias, function (this: Knex.QueryBuilder): void {
+				attachFilter(this, join.on, AttachFilterMode.ON);
+			});
+		});
+	};
+
+	addRelatedOrm(orm);
+	fields.forEach((field) => {
+		addRelatedOrm(field.orm);
+	});
+	addFilter(query.filter);
+
+	// WHERE
+	if (filter != null) {
 		attachFilter(builder, filter, AttachFilterMode.WHERE);
 	}
 
@@ -146,37 +196,6 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 		builder.offset(offset);
 		builder.limit(limit);
 	}
-
-	// JOIN
-	getJoinOrms(fields, orm, baseOrm).forEach((joinOrm) => {
-		let joinOrmProperties: OrmProperties = Orm.getProperties(joinOrm);
-		if (joinOrmProperties.join == null) {
-			return;
-		}
-
-		let authFilter: Filter | undefined = joinOrmProperties.auth && query.auth ? joinOrmProperties.auth(query.auth) : undefined;
-
-		let joins: OrmJoinOn[] = joinOrmProperties.join.through;
-		if (joinOrm !== orm) {
-			let onFilter: Filter = joinOrmProperties.join.on;
-			if (authFilter) {
-				onFilter = onFilter.and(authFilter);
-			}
-
-			joins = joins.concat([{
-				orm: joinOrm,
-				on: onFilter
-			}]);
-		}
-
-		joins.forEach((join) => {
-			let innerJoinOrmProperties: OrmProperties = Orm.getProperties(join.orm),
-				innerJoinTableAlias: string = `${ innerJoinOrmProperties.table } AS ${ innerJoinOrmProperties.tableAs }`;
-			builder.leftJoin(innerJoinTableAlias, function (this: Knex.QueryBuilder): void {
-				attachFilter(this, join.on, AttachFilterMode.ON);
-			});
-		});
-	});
 
 	if (!!query.count) {
 		// TODO: bluebird is not happy?
@@ -287,27 +306,6 @@ function upsertOrmFieldsMap(field: Field<any, any>, orm: Orm, ormFieldsMap: OrmF
 	}
 	set.add(field);
 	return insert;
-}
-
-function getJoinOrms(fields: Set<Field<any, any>>, orm: Orm, baseOrm: Orm): Set<Orm> {
-	let joinOrms: Set<Orm> = new Set([orm]);
-	fields.forEach((field) => {
-		addJoinOrm(field.orm, baseOrm, joinOrms);
-	});
-	return joinOrms;
-}
-
-function addJoinOrm(joinOrm: Orm, baseOrm: Orm, joinOrms: Set<Orm>): void {
-	if (joinOrms.has(joinOrm)) {
-		return;
-	}
-	joinOrms.add(joinOrm);
-
-	// join all parents unless base is no longer within current base
-	let joinOrmProperties: OrmProperties = Orm.getProperties(joinOrm);
-	if (joinOrmProperties.parent != null && Orm.getProperties(joinOrmProperties.parent).base === baseOrm) {
-		addJoinOrm(joinOrmProperties.parent, baseOrm, joinOrms);
-	}
 }
 
 function getDefaultFields(field: JoinManyField<any, any> | CompositeField | Orm): Set<Field<any, any>> {

@@ -26,6 +26,7 @@ export interface OrmProperties {
 	auth?: BoundedOrmAuthBuilder;
 
 	join?: OrmJoinProperties;
+	joinOrm?: Orm;
 }
 
 export interface OrmJoinProperties {

@@ -135,6 +135,7 @@ export function buildJoinOneThroughOrm<O extends Orm, J extends Orm, T extends O
 	return buildJoinOrm<T>(throughBuilder.ref, path, parentOrm, false, false, joinOrm).then((orm) => {
 		let properties: OrmProperties = Orm.getProperties(orm);
 		properties.anonymous = true;
+		properties.joinOrm = joinOrm;
 		return orm;
 	});
 }
@@ -145,6 +146,7 @@ export function buildJoinManyThroughOrm<O extends Orm, J extends Orm, T extends 
 	return buildJoinOrm<T>(throughBuilder.ref, path, parentOrm, false, true, joinOrm).then((orm) => {
 		let properties: OrmProperties = Orm.getProperties(orm);
 		properties.anonymous = true;
+		properties.joinOrm = joinOrm;
 		return orm;
 	});
 }
