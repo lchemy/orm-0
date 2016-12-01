@@ -112,12 +112,12 @@ export type Definitions = {
 	countriesLanguagesJoinOrm: CountriesLanguagesJoinOrm
 };
 export const definitions: Promise<Definitions> = Promise.all([
-	define<ContinentOrm, Continent, AuthUser>("continents", (field, join) => {
+	define<ContinentOrm, AuthUser>("continents", (field, join) => {
 		return {
 			id: field.primary.Numerical("id"),
 			name: field.String("name"),
 
-			countries: join.Many<CountryOrm>("countries", false, true).on((country, continent) => {
+			countries: join.Many<CountryOrm>("countries", false).on((country, continent) => {
 				return country.continentId.eq(continent.id);
 			}).withAuth<AuthUser>((auth, country) => {
 				if (auth.isAdmin || auth.allowedCountryIds == null) {
@@ -132,7 +132,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 		}
 		return continent.id.in(...auth.allowedContinentIds);
 	}),
-	define<CountryOrm, Country>("countries", (field, join) => {
+	define<CountryOrm>("countries", (field, join) => {
 		return {
 			id: field.primary.Numerical("id"),
 			name: field.String("name"),
@@ -146,17 +146,17 @@ export const definitions: Promise<Definitions> = Promise.all([
 				return country.continentId.eq(continent.id);
 			}),
 
-			states: join.Many<StateOrm>("states", false, true).on((state, country) => {
+			states: join.Many<StateOrm>("states", false).on((state, country) => {
 				return state.countryId.eq(country.id);
 			}),
-			languages: join.Many<LanguageOrm>("languages", false, true).through<CountriesLanguagesJoinOrm>("countries_languages", (language, countriesLanguagesJoin) => {
+			languages: join.Many<LanguageOrm>("languages", false).through<CountriesLanguagesJoinOrm>("countries_languages", (language, countriesLanguagesJoin) => {
 				return countriesLanguagesJoin.languageId.eq(language.id);
-			}).on((language, countriesLanguagesJoin, country) => {
+			}).on((_, countriesLanguagesJoin, country) => {
 				return countriesLanguagesJoin.countryId.eq(country.id);
 			})
 		};
 	}),
-	define<StateOrm, State>("states", (field, join) => {
+	define<StateOrm>("states", (field, join) => {
 		return {
 			id: field.primary.Numerical("id"),
 			name: field.String("name"),
@@ -171,7 +171,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 			})
 		};
 	}),
-	define<CityOrm, City>("cities", (field, join) => {
+	define<CityOrm>("cities", (field, join) => {
 		return {
 			id: field.primary.Numerical("id"),
 			name: field.String("name"),
@@ -182,19 +182,19 @@ export const definitions: Promise<Definitions> = Promise.all([
 			})
 		};
 	}),
-	define<LanguageOrm, Language>("languages", (field, join) => {
+	define<LanguageOrm>("languages", (field, join) => {
 		return {
 			id: field.primary.Numerical("id"),
 			name: field.String("name"),
 
 			countries: join.Many<CountryOrm>("countries").through<CountriesLanguagesJoinOrm>("countries_languages", (country, countriesLanguagesJoin) => {
 				return countriesLanguagesJoin.countryId.eq(country.id);
-			}).on((country, countriesLanguagesJoin, language) => {
+			}).on((_, countriesLanguagesJoin, language) => {
 				return countriesLanguagesJoin.languageId.eq(language.id);
 			})
 		};
 	}),
-	define<CountriesLanguagesJoinOrm, CountriesLanguagesJoin>("countries_languages", (field, join) => {
+	define<CountriesLanguagesJoinOrm>("countries_languages", (field) => {
 		return {
 			countryId: field.Numerical("country_id"),
 			languageId: field.String("language_id")
@@ -431,7 +431,7 @@ export function mockData(): Promise<Data> {
 			pairs: [],
 			set: {}
 		} as {
-			pairs: [number, number][],
+			pairs: Array<[number, number]>,
 			set: { [key: string]: boolean }
 		}).pairs.reduce((p, [countryId, languageId]: [number, number]) => {
 			return p.then(() => {

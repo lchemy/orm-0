@@ -46,8 +46,8 @@ function attachFilterInner(builder: Knex.QueryBuilder, filter: Filter, mode: Att
 
 	if (filter instanceof JoinManyFilterNode) {
 		if (mode !== AttachFilterMode.WHERE) {
-			// TODO: cannot join on subquery, right?, throw error
-			throw new Error();
+			// cannot join on subquery, right?, throw error
+			throw new Error(`Invalid filter join mode, cannot join on subquery`);
 		}
 
 		switch (filter.operator) {
@@ -58,8 +58,8 @@ function attachFilterInner(builder: Knex.QueryBuilder, filter: Filter, mode: Att
 				fnName += "NotExists";
 				break;
 			default:
-				// TODO: unknown operator, throw error
-				throw new Error();
+				// unknown operator, throw error
+				throw new Error(`Invalid operator for join many: ${ filter.operator }, ${ FilterOperator[filter.operator] }`);
 		}
 
 		// TODO: andWhereExists doesn't exist in knex for some reason, report bug?
@@ -70,8 +70,8 @@ function attachFilterInner(builder: Knex.QueryBuilder, filter: Filter, mode: Att
 		return builder[fnName](translateJoinManyFilterNode(filter)) as Knex.QueryBuilder;
 	}
 
-	// TODO: invalid filter field, throw error
-	throw new Error();
+	// invalid filter, throw error
+	throw new Error(`Invalid filter: ${ filter }`);
 }
 
 function getBuilderFnName(mode: AttachFilterMode, grouping?: FilterGrouping): string {
@@ -100,8 +100,8 @@ function getBuilderFnName(mode: AttachFilterMode, grouping?: FilterGrouping): st
 function translateOpFilterNode(filter: OpFilterNode<any, any>): Knex.Raw {
 	let sql: string | undefined = SQL_OPERATOR_MAP[filter.operator];
 	if (sql == null) {
-		// TODO: invalid filter operator
-		throw new Error();
+		// invalid filter operator, throw error
+		throw new Error(`Invalid filter operator: ${ filter.operator }, ${ FilterOperator[filter.operator] }`);
 	}
 
 	if (filter.operator === FilterOperator.IN && filter.value.length === 0) {
@@ -128,7 +128,7 @@ function translateOpFilterNode(filter: OpFilterNode<any, any>): Knex.Raw {
 	sql = sql.replace(/\?{1,2}/g, (match) => {
 		if (i >= l) {
 			// too many question marks, not enough arguments provided
-			throw new Error();
+			throw new Error(`Internal library error: number of sql parameters does not match provided parameters`);
 		}
 
 		if (match === "??") {

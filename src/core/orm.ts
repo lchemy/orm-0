@@ -44,20 +44,11 @@ export interface OrmJoinOn {
 }
 
 export abstract class Orm {
-	static bootstrap<O extends Orm>(orm: O, includeJoins: boolean = true): Promise<O> {
-		let bootstrap: (orm: O, includeJoins?: boolean) => Promise<O> = (orm.constructor as any).bootstrap;
-		if (bootstrap == null || bootstrap === Orm.bootstrap) {
-			// TODO: error
-			throw new Error();
-		}
-		return bootstrap(orm, includeJoins);
-	}
-
 	static getProperties(orm: Orm): OrmProperties {
 		return orm[ORM_PROPERTIES] as OrmProperties;
 	}
 
-	constructor(table: string, tableAs: string = "root", path: string[] = []) {
+	constructor(table: string, tableAs: string = "root", path: string[] = [], parentOrm?: Orm, baseOrm?: Orm, rootOrm?: Orm) {
 		let properties: OrmProperties = {
 			depth: 0,
 
@@ -66,8 +57,9 @@ export abstract class Orm {
 
 			path: path,
 
-			root: this,
-			base: this,
+			root: rootOrm || this,
+			base: baseOrm || this,
+			parent: parentOrm,
 
 			anonymous: false,
 

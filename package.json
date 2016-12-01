@@ -1,6 +1,6 @@
 {
   "name": "@lchemy/orm",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "description": "",
   "author": "Jesse Zhang (http://jessezhang.me/)",
   "repository": {
@@ -24,13 +24,13 @@
     "chai": "^3.5.0",
     "chai-as-promised": "^6.0.0",
     "del-cli": "^0.2.0",
-    "mocha": "^3.1.2",
+    "mocha": "^3.2.0",
     "mock-knex": "^0.3.7",
     "sinon": "^1.17.6",
     "sinon-chai": "^2.8.0",
     "sqlite3": "^3.1.8",
-    "tslint": "^3.15.1",
-    "typescript": "^2.0.6",
-    "typings": "^1.5.0"
+    "tslint": "^4.0.2",
+    "typescript": "^2.0.10",
+    "typings": "^2.0.0"
   }
 }

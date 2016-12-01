@@ -6,7 +6,7 @@ import { Orm } from "./orm";
 export abstract class FilterNode {
 	abstract operator: FilterOperator;
 
-	abstract fields: Field<any, any>[];
+	abstract fields: Array<Field<any, any>>;
 
 	and(...expressions: Filter[]): AndFilterGroup {
 		return new AndFilterGroup(expressions.concat(this));
@@ -22,7 +22,7 @@ export abstract class OpFilterNode<T, U> extends FilterNode {
 	field: Field<any, T>;
 	value: U;
 
-	fields: Field<any, any>[];
+	fields: Array<Field<any, any>>;
 
 	constructor(field: Field<any, T>, value: U) {
 		super();
@@ -30,7 +30,7 @@ export abstract class OpFilterNode<T, U> extends FilterNode {
 		this.field = field;
 		this.value = value;
 
-		let fields: Field<any, any>[] = [field];
+		let fields: Array<Field<any, any>> = [field];
 		if (Array.isArray(value)) {
 			value.filter((item) => item instanceof Field).forEach((item) => {
 				fields.push(item);
@@ -56,7 +56,7 @@ export abstract class JoinManyFilterNode<J extends Orm, F extends Orm> extends F
 		}
 	}
 
-	get fields(): Field<any, any>[] {
+	get fields(): Array<Field<any, any>> {
 		if (this.value == null) {
 			return [];
 		}
@@ -68,12 +68,12 @@ export abstract class FilterGroup {
 	abstract grouping: FilterGrouping;
 	expressions: Filter[];
 
-	fields: Field<any, any>[];
+	fields: Array<Field<any, any>>;
 
 	constructor(expressions: Filter[]) {
 		this.expressions = expressions;
 
-		let fields: Field<any, any>[] = [];
+		let fields: Array<Field<any, any>> = [];
 		expressions.forEach((expression) => {
 			fields.push.apply(fields, expression.fields);
 		});
@@ -158,14 +158,14 @@ export class NotBetweenFilterNode<T> extends OpFilterNode<T, [T | Field<any, T>,
 		return new NotBetweenFilterNode(this.field, this.value);
 	}
 }
-export class InFilterNode<T> extends OpFilterNode<T, (T | Field<any, T>)[]> {
+export class InFilterNode<T> extends OpFilterNode<T, Array<T | Field<any, T>>> {
 	operator: FilterOperator = FilterOperator.IN;
 
 	clone(): InFilterNode<T> {
 		return new InFilterNode(this.field, this.value);
 	}
 }
-export class NotInFilterNode<T> extends OpFilterNode<T, (T | Field<any, T>)[]> {
+export class NotInFilterNode<T> extends OpFilterNode<T, Array<T | Field<any, T>>> {
 	operator: FilterOperator = FilterOperator.NOT_IN;
 
 	clone(): NotInFilterNode<T> {

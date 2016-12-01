@@ -23,8 +23,7 @@ export function buildField<O extends Orm, T>(orm: O, path: string[], definition:
 			ctor = BinaryField;
 			break;
 		default:
-			// TODO: error
-			throw new Error();
+			throw new Error(`Invalid definition field type: ${ definition.type }, ${ FieldType[definition.type as any] }`);
 	}
 	return (new (ctor as any)(orm, path, definition.column, definition.exclusivity, definition.mapper)) as Field<O, T>;
 }

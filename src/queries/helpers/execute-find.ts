@@ -220,7 +220,7 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 			return baseResults;
 		}
 
-		let promises: Promise<JoinResultContainer>[] = [];
+		let promises: Array<Promise<JoinResultContainer>> = [];
 		ormFieldsMap.forEach((joinFields: Set<Field<any, any>>, joinOrm: Orm) => {
 			if (joinOrm === orm) {
 				return;
@@ -292,7 +292,7 @@ function addToOrmFieldsMap(field: Field<any, any>, orm: Orm, baseOrm: Orm, ormFi
 	let addNewJoin: boolean = upsertOrmFieldsMap(field, joinOrm, ormFieldsMap);
 	if (addNewJoin && joinOrmProperties.join != null && joinOrmProperties.join.many != null) {
 		joinOrmProperties.join.many.requiredBaseFields.forEach((innerField) => {
-			addToOrmFieldsMap(field, orm, baseOrm, ormFieldsMap);
+			addToOrmFieldsMap(innerField, orm, baseOrm, ormFieldsMap);
 		});
 	}
 }
@@ -313,10 +313,7 @@ function getDefaultFields(field: JoinManyField<any, any> | CompositeField | Orm)
 		return Orm.getProperties(field.orm).defaultFields;
 	} else if (field instanceof Orm) {
 		return Orm.getProperties(field).defaultFields;
-	} else if (field instanceof CompositeField) {
-		return CompositeField.getProperties(field).defaultFields;
 	} else {
-		// TODO: error
-		throw new Error();
+		return CompositeField.getProperties(field).defaultFields;
 	}
 }

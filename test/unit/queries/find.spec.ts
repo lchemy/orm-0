@@ -112,6 +112,7 @@ describe("find queries", () => {
 	it("should find all states with count", () => {
 		return findAllWithCount<StateOrm>("states").then(({ rows: states, count }: { rows: State[], count: number }) => {
 			expect(states.length).to.eq(data.states.length);
+			expect(count).to.eq(data.states.length);
 		});
 	});
 

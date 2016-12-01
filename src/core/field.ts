@@ -59,10 +59,10 @@ export abstract class Field<O extends Orm, T> {
 		return new NotEqualFilterNode(this, value);
 	}
 
-	in(...values: (T | Field<any, T>)[]): InFilterNode<T> {
+	in(...values: Array<T | Field<any, T>>): InFilterNode<T> {
 		return new InFilterNode(this, values);
 	}
-	notIn(...values: (T | Field<any, T>)[]): NotInFilterNode<T> {
+	notIn(...values: Array<T | Field<any, T>>): NotInFilterNode<T> {
 		return new NotInFilterNode(this, values);
 	}
 

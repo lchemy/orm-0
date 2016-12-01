@@ -1,6 +1,5 @@
 import { Field, Filter, FilterGroup, FilterGrouping, FilterOperator, JoinManyFilterNode, OpFilterNode, Orm } from "../../core";
 
-// TODO: implement
 export function testFilter(filter: Filter, joinOrm: Orm, base: Object, join: Object): boolean {
 	if (filter instanceof FilterGroup) {
 		return testFilterGroup(filter, joinOrm, base, join);
@@ -9,8 +8,8 @@ export function testFilter(filter: Filter, joinOrm: Orm, base: Object, join: Obj
 	} else if (filter instanceof JoinManyFilterNode) {
 		return testJoinManyFilterNode(filter, joinOrm, base, join);
 	} else {
-		// TODO: error
-		throw new Error();
+		// invalid filter, probably an instance of the abstract class?
+		throw new Error(`Invalid filter: ${ filter }`);
 	}
 }
 
@@ -69,12 +68,14 @@ export function testOpFilterNode(filter: OpFilterNode<any, any>, joinOrm: Orm, b
 		case FilterOperator.IS_NOT_NULL:
 			return filterField != null;
 		default:
-			// TODO: error
-			throw new Error();
+			throw new Error(`Invalid filter type for operator testing: ${ filter.operator }, ${ FilterOperator[filter.operator] }`);
 	}
 }
 
 export function testJoinManyFilterNode(filter: JoinManyFilterNode<any, any>, joinOrm: Orm, base: Object, join: Object): boolean {
+	// tslint:disable-next-line
+	filter; joinOrm; base; join;
+
 	// TODO: implement this?
 	throw new Error("Unimplemented");
 }
@@ -88,7 +89,7 @@ function getFieldValue<T>(field: Field<any, T>, joinOrm: Orm, base: Object, join
 }
 
 function testLike(value: any, like: string): boolean {
-	like = like.replace(/(\W|_)/g, "\\$1").replace(/(\\?)\\([\%\_])/g, (match, escape, type) => {
+	like = like.replace(/(\W|_)/g, "\\$1").replace(/(\\?)\\([\%\_])/g, (_, escape, type) => {
 		if (!!escape) {
 			return type;
 		}

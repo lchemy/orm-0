@@ -6,6 +6,10 @@
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
 		"strictNullChecks": true,
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
 		"rootDir": ".",
 		"baseUrl": ".",
         "outDir": ".test-tmp"

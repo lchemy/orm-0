@@ -6,7 +6,7 @@ import { executeFind } from "../../../../src/queries/helpers/execute-find";
 import { knex } from "../../fixtures/knex";
 
 import {
-	City, CityOrm, Continent, Country, CountryOrm, Data, Language, LanguageOrm, State, StateOrm,
+	City, CityOrm, Continent, Country, Data, Language, LanguageOrm, State,
 	createTables, definitions, deleteTables, mockData
 } from "../../fixtures/geo-data";
 
@@ -96,7 +96,7 @@ describe("execute find", () => {
 					expect(country.continent).to.have.all.keys(["id", "name"]);
 
 					country.states.forEach((state) => {
-						expect(state).to.have.all.keys(["id", "name", "country", "countryId"]);
+						expect(state).to.have.all.keys(["id", "name", "countryId"]);
 					});
 				});
 			});
@@ -331,7 +331,7 @@ describe("execute find", () => {
 					stateOrm.cities.orm.id,
 					stateOrm.cities.orm.name
 				],
-				filter: stateOrm.cities.exists((city: CityOrm, state: StateOrm) => {
+				filter: stateOrm.cities.exists((city: CityOrm) => {
 					return city.name.like("%1%");
 				})
 			}).then((states: any[]) => {
@@ -390,7 +390,7 @@ describe("execute find", () => {
 					countryOrm.languages.orm.id,
 					countryOrm.languages.orm.name
 				],
-				filter: countryOrm.languages.exists((language: LanguageOrm, country: CountryOrm) => {
+				filter: countryOrm.languages.exists((language: LanguageOrm) => {
 					return language.name.like("%1%");
 				})
 			}).then((countries: Country[]) => {

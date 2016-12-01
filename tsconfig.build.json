@@ -7,6 +7,10 @@
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
 		"strictNullChecks": true,
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
 		"rootDir": "./src",
 		"baseUrl": ".",
         "outDir": "dist"

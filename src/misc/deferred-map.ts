@@ -1,6 +1,7 @@
 export interface DeferredEntry<T> {
 	promise: Promise<T>;
 	resolve: (value: T | Promise<T>) => void;
+	value?: T;
 }
 
 export class DeferredMap<K, V> {
@@ -30,11 +31,19 @@ export class DeferredMap<K, V> {
 		return promise;
 	}
 
+	getSync(key: K): V {
+		let deferred: DeferredEntry<V> | undefined = this.map.get(key);
+		if (deferred == null || deferred.value === undefined) {
+			throw new Error(`Failed to retrieve '${ key }' synchronously`);
+		}
+		return deferred.value!;
+	}
+
 	getAwait(key: K, ms: number = 1000): Promise<V> {
 		return new Promise<V>((resolve, reject) => {
 			let timer: NodeJS.Timer = setTimeout(() => {
 				// TODO: error
-				reject(new Error(`Failed to retrieve '${ key }' in ${ ms }ms.`));
+				reject(new Error(`Failed to retrieve '${ key }' in ${ ms }ms`));
 			}, ms);
 
 			this.get(key).then((val) => {
@@ -54,7 +63,10 @@ export class DeferredMap<K, V> {
 		}
 
 		let deferred: DeferredEntry<V> = this.map.get(key)!;
-		deferred.resolve(value);
+		Promise.resolve(value).then((unwrappedValue) => {
+			deferred.value = unwrappedValue;
+			deferred.resolve(unwrappedValue);
+		});
 	}
 
 	has(key: K): boolean {
@@ -64,7 +76,7 @@ export class DeferredMap<K, V> {
 	awaitAll(): Promise<void> {
 		return new Promise<void>((resolve) => {
 			setTimeout(() => {
-				let promises: Promise<any>[] = Array.from(this.map.values()).map((entry) => entry.promise);
+				let promises: Array<Promise<any>> = Array.from(this.map.values()).map((entry) => entry.promise);
 				Promise.all(promises).then(() => {
 					resolve();
 				});

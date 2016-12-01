@@ -20,8 +20,8 @@ export function hydrateFilter(filter: Filter, orm: Orm, results: Object[]): Filt
 	} else if (filter instanceof JoinManyFilterNode) {
 		return hydrateJoinManyFilterNode(filter, orm, results);
 	} else {
-		// TODO: error
-		throw new Error();
+		// invalid filter, probably an instance of the abstract class?
+		throw new Error(`Invalid filter: ${ filter }`);
 	}
 }
 
@@ -139,11 +139,14 @@ export function hydrateOpFilterNode(filter: OpFilterNode<any, any>, orm: Orm, re
 			throw new Error("Unimplemented");
 		default:
 			// TODO: error
-			throw new Error();
+			throw new Error(`Invalid filter type for operator hydration: ${ filter.operator }, ${ FilterOperator[filter.operator] }`);
 	}
 }
 
 export function hydrateJoinManyFilterNode(filter: JoinManyFilterNode<any, any>, orm: Orm, results: Object[]): Filter {
+	// tslint:disable-next-line
+	filter; orm; results;
+
 	// TODO: implement this?
 	throw new Error("Unimplemented");
 }

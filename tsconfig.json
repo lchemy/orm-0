@@ -5,6 +5,10 @@
         "moduleResolution": "node",
         "experimentalDecorators": true,
 		"strictNullChecks": true,
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
 		"noEmit": true,
 		"rootDir": "."
     },

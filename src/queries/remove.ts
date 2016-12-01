@@ -41,7 +41,7 @@ export function removeModels<O extends Orm, M, A>(ref: string | symbol | O, mode
 		let ormProperties: OrmProperties = Orm.getProperties(orm),
 			primaryKey: Field<O, number | string> = ormProperties.primaryKey!;
 
-		let ids: (number | string)[] = models.map((model) => primaryKey.mapper(model));
+		let ids: Array<number | string> = models.map((model) => primaryKey.mapper(model));
 		return primaryKey.in(...ids);
 	}, auth, trx);
 }

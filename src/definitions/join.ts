@@ -1,7 +1,7 @@
 import { CompositeField, Field, FieldExclusion, Filter, JoinManyField, Orm } from "../core";
 import { normalizeExclusivity } from "./field";
 
-export type JoinFieldsBuilder<J extends Orm> = (orm: J) => (Field<J, any> | CompositeField | JoinManyField<any, J> | Orm)[];
+export type JoinFieldsBuilder<J extends Orm> = (orm: J) => Array<Field<J, any> | CompositeField | JoinManyField<any, J> | Orm>;
 export interface JoinThroughBuilder<O extends Orm> {
 	ref: string | symbol;
 	builder: JoinExpressionBuilder<O>;
@@ -22,16 +22,14 @@ export type JoinOrmAuthBuilder5<A, O1, O2, O3, O4, O5> = (auth: A, o1: O1, o2: O
 export abstract class JoinDefinition<O, J> {
 	ref: string | symbol;
 	exclusivity: FieldExclusion;
-	includeJoins: boolean;
 	abstract fieldsBuilder?: JoinFieldsBuilder<O | J>;
-	abstract throughBuilders: JoinThroughBuilder<O | J>[];
+	abstract throughBuilders: Array<JoinThroughBuilder<O | J>>;
 	abstract onBuilder: JoinExpressionBuilder<O | J>;
 	abstract authBuilder?: JoinOrmAuthBuilder<any, O | J>;
 
-	constructor(ref: string | symbol, exclusivity: FieldExclusion, includeJoins: boolean) {
+	constructor(ref: string | symbol, exclusivity: FieldExclusion) {
 		this.ref = ref;
 		this.exclusivity = exclusivity;
-		this.includeJoins = includeJoins;
 	}
 
 	abstract fields(fieldsBuilder: JoinFieldsBuilder<O | J>): this;
@@ -62,7 +60,7 @@ export interface JoinDefinition5<O, T1, T2, T3, J> extends JoinDefinition<O, J> 
 
 export class JoinOneDefinition<O extends Orm, J extends Orm> extends JoinDefinition<O, J> implements JoinDefinition2<O, J> {
 	fieldsBuilder?: JoinFieldsBuilder<J>;
-	throughBuilders: JoinThroughBuilder<O>[] = [];
+	throughBuilders: Array<JoinThroughBuilder<O>> = [];
 	onBuilder: JoinExpressionBuilder<O>;
 	authBuilder?: JoinOrmAuthBuilder<any, O>;
 
@@ -92,7 +90,7 @@ export class JoinOneDefinition<O extends Orm, J extends Orm> extends JoinDefinit
 
 export class JoinManyDefinition<O extends Orm, J extends Orm> extends JoinDefinition<J, O> implements JoinDefinition2<J, O> {
 	fieldsBuilder?: JoinFieldsBuilder<J>;
-	throughBuilders: JoinThroughBuilder<J>[] = [];
+	throughBuilders: Array<JoinThroughBuilder<J>> = [];
 	onBuilder: JoinExpressionBuilder<J>;
 	authBuilder?: JoinOrmAuthBuilder<any, J>;
 
@@ -120,17 +118,17 @@ export class JoinManyDefinition<O extends Orm, J extends Orm> extends JoinDefini
 	}
 }
 
-export type JoinOneDefiner<O extends Orm> = <J extends Orm>(ref: string | symbol, exclusivity?: FieldExclusion | boolean, includeJoins?: boolean) => JoinOneDefinition<O, J>;
-export type JoinManyDefiner<O extends Orm> = <J extends Orm>(ref: string | symbol, exclusivity?: FieldExclusion | boolean, includeJoins?: boolean) => JoinManyDefinition<O, J>;
+export type JoinOneDefiner<O extends Orm> = <J extends Orm>(ref: string | symbol, exclusivity?: FieldExclusion | boolean) => JoinOneDefinition<O, J>;
+export type JoinManyDefiner<O extends Orm> = <J extends Orm>(ref: string | symbol, exclusivity?: FieldExclusion | boolean) => JoinManyDefinition<O, J>;
 export interface JoinDefinitions<O extends Orm> {
 	One: JoinOneDefiner<O>;
 	Many: JoinManyDefiner<O>;
 }
 export const joinDefinitions: JoinDefinitions<Orm> = {
-	One: (ref: string | symbol, exclusivity?: FieldExclusion | boolean, includeJoins: boolean = false) => {
-		return new JoinOneDefinition<Orm, Orm>(ref, normalizeExclusivity(exclusivity, FieldExclusion.EXCLUDE), includeJoins);
+	One: (ref: string | symbol, exclusivity?: FieldExclusion | boolean) => {
+		return new JoinOneDefinition<Orm, Orm>(ref, normalizeExclusivity(exclusivity, FieldExclusion.EXCLUDE));
 	},
-	Many: (ref: string | symbol, exclusivity?: FieldExclusion | boolean, includeJoins: boolean = false) => {
-		return new JoinManyDefinition<Orm, Orm>(ref, normalizeExclusivity(exclusivity, FieldExclusion.EXCLUDE), includeJoins);
+	Many: (ref: string | symbol, exclusivity?: FieldExclusion | boolean) => {
+		return new JoinManyDefinition<Orm, Orm>(ref, normalizeExclusivity(exclusivity, FieldExclusion.EXCLUDE));
 	}
 };
