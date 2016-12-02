@@ -15,7 +15,7 @@ export interface FindQuery {
 	fields?: FindQueryField[];
 	filter?: Filter;
 	sorts?: FindSortField[];
-	pagination?: { offset?: number, limit?: number };
+	pagination?: { offset?: number, limit?: number | null };
 	auth?: any;
 }
 
@@ -31,7 +31,13 @@ export function executeFind(orm: Orm, query: FindQuery = {}, trx?: Knex.Transact
 function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.Transaction): Promise<number | Object[]> {
 	let ormProperties: OrmProperties = Orm.getProperties(orm);
 
-	let builder: Knex.QueryBuilder = knex.table(`${ ormProperties.table } AS ${ ormProperties.tableAs }`);
+	let builder: Knex.QueryBuilder;
+	if (ormProperties.table === ormProperties.tableAs) {
+		builder = knex.table(ormProperties.table);
+	} else {
+		builder = knex.table(`${ ormProperties.table } AS ${ ormProperties.tableAs }`);
+	}
+
 	if (trx != null) {
 		builder.transacting(trx);
 	}
@@ -100,7 +106,7 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 	}
 
 	// TODO: refactor this part
-	let filter: Filter | undefined = query.filter;
+	let filter: Filter | undefined;
 	let relatedOrms: Set<Orm> = new Set();
 	let addRelatedOrm: (relatedOrm: Orm) => boolean = (relatedOrm: Orm) => {
 		let relatedOrmProperties: OrmProperties = Orm.getProperties(relatedOrm);
@@ -112,14 +118,14 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 		}
 
 		relatedOrms.add(relatedOrm);
+		if (relatedOrmProperties.parent != null) {
+			addRelatedOrm(relatedOrmProperties.parent);
+		}
 		if (relatedOrmProperties.join != null) {
 			addJoinOrm(relatedOrm);
 		}
 		if (relatedOrmProperties.auth && query.auth) {
 			addFilter(relatedOrmProperties.auth(query.auth));
-		}
-		if (relatedOrmProperties.parent != null) {
-			addRelatedOrm(relatedOrmProperties.parent);
 		}
 		return true;
 	};
@@ -149,7 +155,7 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 				on: joinOrmProperties.join!.on
 			}]);
 		}
-		joins.forEach((join) => {
+		joins.slice().reverse().forEach((join) => {
 			let innerJoinOrmProperties: OrmProperties = Orm.getProperties(join.orm),
 				innerJoinTableAlias: string = `${ innerJoinOrmProperties.table } AS ${ innerJoinOrmProperties.tableAs }`;
 			builder.leftJoin(innerJoinTableAlias, function (this: Knex.QueryBuilder): void {
@@ -181,20 +187,23 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 	}
 
 	// LIMIT
-	// TODO: allow limit to be explicitly null
 	if (!query.count && ormProperties.root === orm) {
 		let offset: number = 0,
-			limit: number = 50;
+			limit: number | null = 50;
 		if (query.pagination != null) {
 			if (query.pagination.offset != null) {
 				offset = Math.max(0, query.pagination.offset);
 			}
-			if (query.pagination.limit != null) {
+			if (query.pagination.limit == null) {
+				limit = null;
+			} else if (query.pagination.limit !== undefined) {
 				limit = Math.max(0, query.pagination.limit);
 			}
 		}
 		builder.offset(offset);
-		builder.limit(limit);
+		if (limit != null) {
+			builder.limit(limit);
+		}
 	}
 
 	if (!!query.count) {
@@ -206,6 +215,7 @@ function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.T
 			return result[0].count || 0;
 		}) as any as Promise<number>;
 	}
+
 
 	if (ormFieldsMap.size <= 1) {
 		// TODO: bluebird is not happy?

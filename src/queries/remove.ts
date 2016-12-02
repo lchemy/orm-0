@@ -1,15 +1,13 @@
 import * as Knex from "knex";
 
-import { knex } from "../config/knex";
 import { BoundedOrmAuthBuilder, Field, Filter, Orm, OrmProperties } from "../core";
-import { AttachFilterMode, attachFilter, getOrm, withTransaction } from "./helpers";
+import { executeRemove, getOrm, withTransaction } from "./helpers";
 
 export function remove<O extends Orm>(ref: string | symbol | O, builder: (orm: O) => Filter, auth?: any, trx?: Knex.Transaction): Promise<number>;
 export function remove<O extends Orm, A>(ref: string | symbol | O, builder: (orm: O) => Filter, auth?: A, trx?: Knex.Transaction): Promise<number>;
 export function remove<O extends Orm, A>(ref: string | symbol | O, builder: (orm: O) => Filter, auth?: A, trx?: Knex.Transaction): Promise<number> {
 	return getOrm(ref).then((orm) => {
 		let ormProperties: OrmProperties = Orm.getProperties(orm),
-			table: string = ormProperties.table,
 			authBuilder: BoundedOrmAuthBuilder | undefined = ormProperties.auth,
 			filter: Filter = builder(orm);
 
@@ -20,15 +18,8 @@ export function remove<O extends Orm, A>(ref: string | symbol | O, builder: (orm
 			}
 		}
 
-		let removeQuery: Knex.QueryBuilder = knex.del().from(`${ table } AS root`);
-		attachFilter(removeQuery, filter, AttachFilterMode.WHERE); // TODO: need to attach joins, if needed
-
-		// TODO: file pull request to knex to handle this case
-		let sql: Knex.Sql = removeQuery.toSQL(),
-			modifiedSql: string = sql.sql.replace("delete from", "delete `root` from");
-
 		return withTransaction((tx) => {
-			return (knex.raw(modifiedSql, sql.bindings) as any as Knex.QueryInterface).transacting(tx).then((res) => res[0].affectedRows) as any as Promise<number>;
+			return executeRemove(orm, filter, tx);
 		}, trx);
 	});
 }

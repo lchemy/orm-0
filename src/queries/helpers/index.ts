@@ -1,5 +1,7 @@
 export * from "./attach-filter";
 export * from "./execute-find";
+export * from "./execute-remove";
+export * from "./execute-update";
 export * from "./get-object-at-path";
 export * from "./get-orm";
 export * from "./hydrate-filter";

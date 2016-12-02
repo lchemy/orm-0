@@ -21,6 +21,7 @@ export interface OrmProperties {
 
 	anonymous: boolean;
 
+	fields: Set<Field<Orm, any>>;
 	defaultFields: Set<Field<Orm, any>>;
 
 	auth?: BoundedOrmAuthBuilder;
@@ -48,7 +49,7 @@ export abstract class Orm {
 		return orm[ORM_PROPERTIES] as OrmProperties;
 	}
 
-	constructor(table: string, tableAs: string = "root", path: string[] = [], parentOrm?: Orm, baseOrm?: Orm, rootOrm?: Orm) {
+	constructor(table: string, tableAs: string = table, path: string[] = [], parentOrm?: Orm, baseOrm?: Orm, rootOrm?: Orm) {
 		let properties: OrmProperties = {
 			depth: 0,
 
@@ -63,6 +64,7 @@ export abstract class Orm {
 
 			anonymous: false,
 
+			fields: new Set<Field<any, any>>(),
 			defaultFields: new Set<Field<any, any>>()
 		};
 		this[ORM_PROPERTIES] = properties;

@@ -23,16 +23,7 @@ export abstract class Field<O extends Orm, T> {
 		this.path = path;
 		this.column = column;
 		this.exclusivity = exclusivity;
-
-		if (mapper != null) {
-			this.mapper = mapper;
-		} else {
-			this.mapper = (model: Object) => {
-				return this.path.reduce((memo, piece) => {
-					return memo != null ? memo[piece] : memo;
-				}, model) as T;
-			};
-		}
+		this.mapper = buildFieldMapper(path, mapper);
 	}
 
 	get tableAs(): string {
@@ -129,4 +120,24 @@ export class StringField<O> extends LikeField<O, string> {
 
 export class BinaryField<O> extends LikeField<O, Buffer> {
 	type: FieldType = FieldType.BINARY;
+}
+
+function buildFieldMapper<T>(path: string[], mapper?: FieldMapper<T>): FieldMapper<T> {
+	let rawMapper: FieldMapper<T> = (model) => {
+		return path.reduce((memo, piece) => {
+			return memo != null ? memo[piece] : memo;
+		}, model) as T;
+	};
+
+	if (mapper != null) {
+		return (model) => {
+			let mapperValue: T | undefined = mapper(model);
+			if (mapperValue === undefined) {
+				return rawMapper(model);
+			}
+			return mapperValue;
+		};
+	}
+
+	return rawMapper;
 }

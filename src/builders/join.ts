@@ -12,9 +12,10 @@ function buildJoinOrm<O extends Orm>(ref: string | symbol, path: string[], paren
 	} else {
 		baseOrm = parentProperties.base != null ? parentProperties.base : parentOrm;
 	}
-	let rootOrm: Orm = parentProperties.root != null ? parentProperties.root : parentOrm;
+	let rootOrm: Orm = parentProperties.root != null ? parentProperties.root : parentOrm,
+		rootOrmProperties: OrmProperties = Orm.getProperties(rootOrm);
 
-	let tableAs: string = path.join("$"),
+	let tableAs: string = rootOrmProperties.tableAs + "$" + path.join("$"),
 		orm: O = new (ormCtor as any)(tableAs, path, parentOrm, baseOrm, rootOrm) as O,
 		properties: OrmProperties = Orm.getProperties(orm);
 

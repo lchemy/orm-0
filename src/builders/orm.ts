@@ -14,7 +14,7 @@ export function buildOrmClass<O extends Orm>(ref: OrmRef): typeof Orm {
 	let definition: OrmDefinition<O> = ORM_DEFINITIONS_CACHE.getSync(ref);
 
 	let ormCtor: typeof Orm = class extends Orm {
-		constructor(tableAs: string = "root", path: string[] = [], parentOrm?: Orm, baseOrm?: Orm, rootOrm?: Orm) {
+		constructor(tableAs: string = definition.table, path: string[] = [], parentOrm?: Orm, baseOrm?: Orm, rootOrm?: Orm) {
 			super(definition.table, tableAs, path, parentOrm, baseOrm, rootOrm);
 
 			let self: O = this as any as O;
@@ -39,6 +39,7 @@ function scaffold<O extends Orm>(orm: O, schema: OrmSchema<O>, obj: O | Composit
 		properties: OrmProperties | CompositeProperties = obj instanceof Orm ? ormProperties : CompositeField.getProperties(obj);
 
 	let path: string[] = properties.path,
+		fields: Set<Field<any, any>> = properties.fields,
 		defaultFields: Set<Field<any, any>> = properties.defaultFields;
 
 	// add fields to object
@@ -59,6 +60,7 @@ function scaffold<O extends Orm>(orm: O, schema: OrmSchema<O>, obj: O | Composit
 			ormProperties.primaryKey = field;
 		}
 
+		fields.add(field);
 		if (field.exclusivity !== FieldExclusion.EXCLUDE) {
 			defaultFields.add(field);
 		}
@@ -75,7 +77,11 @@ function scaffold<O extends Orm>(orm: O, schema: OrmSchema<O>, obj: O | Composit
 			value: compositeField
 		});
 
-		CompositeField.getProperties(compositeField).defaultFields.forEach((defaultField) => {
+		let compositeProperties: CompositeProperties = CompositeField.getProperties(compositeField);
+		compositeProperties.fields.forEach((field) => {
+			fields.add(field);
+		});
+		compositeProperties.defaultFields.forEach((defaultField) => {
 			defaultFields.add(defaultField);
 		});
 	});

@@ -1,21 +1,17 @@
 import * as Knex from "knex";
 
 import { BoundedOrmAuthBuilder, Field, Filter, Orm, OrmProperties } from "../core";
-import { AttachFilterMode, attachFilter, getOrm, withTransaction } from "./helpers";
+import { UpdateData, executeUpdate, getOrm, withTransaction } from "./helpers";
 
 export interface UpdateQuery<O extends Orm> {
 	fields: Array<Field<O, any>>;
 	filter: Filter;
 }
 
-interface UpdateModelData {
-	[key: string]: any;
-};
-
 interface UpdateModel {
 	id: number | string;
-	data: UpdateModelData;
-};
+	data: UpdateData;
+}
 
 export function update<O extends Orm>(
 	ref: string | symbol | O, builder: (orm: O) => UpdateQuery<O>, model: Object, auth?: any, trx?: Knex.Transaction
@@ -31,13 +27,13 @@ export function update<O extends Orm, M, A>(
 ): Promise<number> {
 	return getOrm(ref).then((orm) => {
 		let ormProperties: OrmProperties = Orm.getProperties(orm),
-			table: string = ormProperties.table,
 			authBuilder: BoundedOrmAuthBuilder | undefined = ormProperties.auth,
 			query: UpdateQuery<O> = builder(orm),
 			authFilter: Filter | undefined = authBuilder != null && auth != null ? authBuilder(auth) : undefined;
 
 		// TODO: validations and etc.
-		let data: UpdateModelData = query.fields.reduce((memo, field) => {
+		// TODO: make sure no nulls or undefined (unless we want to? that would mean default?)
+		let data: UpdateData = query.fields.reduce((memo, field) => {
 			memo[field.column] = field.mapper(model);
 			return memo;
 		}, {});
@@ -48,9 +44,7 @@ export function update<O extends Orm, M, A>(
 		}
 
 		return withTransaction((tx) => {
-			let updateQuery: Knex.QueryBuilder = tx.update(data).table(`${ table } AS root`);
-			attachFilter(updateQuery, filter, AttachFilterMode.WHERE); // TODO: need to attach joins, if needed
-			return updateQuery.then((res) => res) as any as Promise<number>;
+			return executeUpdate(orm, data, filter, tx);
 		}, trx);
 	});
 }
@@ -70,7 +64,6 @@ export function updateModels<O extends Orm, M, A>(
 	return getOrm(ref).then((orm) => {
 		let ormProperties: OrmProperties = Orm.getProperties(orm),
 			primaryKey: Field<O, number | string> = ormProperties.primaryKey!,
-			table: string = ormProperties.table,
 			authBuilder: BoundedOrmAuthBuilder | undefined = ormProperties.auth,
 			fields: Array<Field<O, any>> = builder(orm),
 			authFilter: Filter | undefined = authBuilder != null && auth != null ? authBuilder(auth) : undefined;
@@ -78,7 +71,7 @@ export function updateModels<O extends Orm, M, A>(
 		// TODO: validations and etc.
 		let updateModels: UpdateModel[] = models.map((model) => {
 			let id: number | string = primaryKey.mapper(model);
-			let data: UpdateModelData = fields.reduce((memo, field) => {
+			let data: UpdateData = fields.reduce((memo, field) => {
 				memo[field.column] = field.mapper(model);
 				return memo;
 			}, {});
@@ -99,16 +92,13 @@ export function updateModels<O extends Orm, M, A>(
 						filter = filter.and(authFilter);
 					}
 
-					let updateQuery: Knex.QueryBuilder = tx.update(model.data).table(`${ table } AS root`);
-					attachFilter(updateQuery, filter, AttachFilterMode.WHERE); // TODO: need to attach joins, if needed
-					return updateQuery.then((res) => {
+					return executeUpdate(orm, model.data, filter, tx).then((res) => {
 						return res + count;
-					}) as any as Promise<number>;
+					});
 				});
 			}, Promise.resolve(0)).then<number[] | string[]>((count) => {
 				if (count === 0) {
-					// TODO: error
-					return Promise.reject(undefined);
+					return Promise.reject(new Error(`Failed to update any models, expected to update ${ models.length } model(s)`));
 				}
 
 				return updateModels.map((m) => m.id) as (number[] | string[]);

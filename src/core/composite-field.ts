@@ -10,6 +10,7 @@ export interface CompositeProperties {
 	base: Orm;
 	parent?: Orm;
 
+	fields: Set<Field<any, any>>;
 	defaultFields: Set<Field<any, any>>;
 }
 
@@ -27,6 +28,7 @@ export class CompositeField {
 			base: parentProperties.base,
 			parent: parent,
 
+			fields: new Set<Field<any, any>>(),
 			defaultFields: new Set<Field<any, any>>()
 		};
 		this[COMPOSITE_FIELD_PROPERTIES] = properties;

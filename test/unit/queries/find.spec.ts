@@ -11,7 +11,7 @@ import {
 
 describe("find queries", () => {
 	let queryCount: number;
-	let queryListener: () => void = () => {
+	let queryListener: (data: any) => void = () => {
 		queryCount++;
 	};
 	let data: Data;
