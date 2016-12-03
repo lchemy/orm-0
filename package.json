@@ -19,7 +19,7 @@
     "prebuild": "del-cli ./dist && npm run test && npm run lint",
     "precoverage": "del-cli ./coverage",
     "pretest": "del-cli ./test-tmp && tsc -p ./tsconfig.test.json",
-    "test": "mocha --ui bdd --require ./test-tmp/test/bootstrap ./test-tmp/test/**/*.spec.js"
+    "test": "mocha --ui bdd --require ./test-tmp/test/bootstrap \"./test-tmp/test/**/*.spec.js\""
   },
   "license": "MIT",
   "dependencies": {
