@@ -9,16 +9,17 @@
   },
   "scripts": {
     "build": "tsc -p ./tsconfig.build.json",
+    "clean": "del-cli ./.nyc_output ./coverage ./dist ./test-tmp",
     "coverage": "nyc --reporter lcov --reporter text --reporter text-summary --exclude \"**/test/**\" --report-dir ./coverage npm run test",
     "coveralls": "cat ./coverage/lcov.info | coveralls",
     "lint": "tslint -c tslint.json --project tsconfig.json -t stylish",
     "postbuild": "node ./scripts/copy-package && node ./scripts/copy-dist-files",
     "postinstall": "typings install",
-    "posttest": "del-cli ./.test-tmp",
+    "posttest": "del-cli ./test-tmp",
     "prebuild": "del-cli ./dist && npm run test && npm run lint",
     "precoverage": "del-cli ./coverage",
-    "pretest": "del-cli ./.test-tmp && tsc -p ./tsconfig.test.json",
-    "test": "mocha --ui bdd --require ./.test-tmp/test/bootstrap ./.test-tmp/test/**/*.spec.js"
+    "pretest": "del-cli ./test-tmp && tsc -p ./tsconfig.test.json",
+    "test": "mocha --ui bdd --require ./test-tmp/test/bootstrap ./test-tmp/test/**/*.spec.js"
   },
   "license": "MIT",
   "dependencies": {

@@ -6,6 +6,6 @@
 		"noEmit": false,
 		"rootDir": ".",
 		"baseUrl": ".",
-        "outDir": ".test-tmp"
+        "outDir": "test-tmp"
     }
 }
