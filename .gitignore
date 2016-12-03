@@ -1,3 +1,4 @@
+*.log
 .npmrc
 .nyc_output/
 .vscode/
