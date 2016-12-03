@@ -13,6 +13,7 @@
     "coveralls": "cat ./coverage/lcov.info | coveralls",
     "lint": "tslint -c tslint.json --project tsconfig.json -t stylish",
     "postbuild": "node ./scripts/copy-package && node ./scripts/copy-dist-files",
+    "postinstall": "typings install",
     "posttest": "del-cli ./.test-tmp",
     "prebuild": "del-cli ./dist && npm run test && npm run lint",
     "precoverage": "del-cli ./coverage",
