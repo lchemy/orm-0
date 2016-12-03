@@ -8,15 +8,16 @@
     "url": "https://github.com/lchemy/orm.git"
   },
   "scripts": {
-    "prebuild": "del-cli ./dist && npm run test && npm run lint",
     "build": "tsc -p ./tsconfig.build.json",
-    "postbuild": "node ./scripts/copy-package && node ./scripts/copy-dist-files",
+    "coverage": "nyc --reporter lcov --reporter text --reporter text-summary --exclude \"**/test/**\" --report-dir ./coverage npm run test",
+    "coveralls": "cat ./coverage/lcov.info | coveralls",
     "lint": "tslint -c tslint.json --project tsconfig.json -t stylish",
-    "pretest": "del-cli ./.test-tmp && tsc -p ./tsconfig.test.json",
-    "test": "mocha --ui bdd --require ./.test-tmp/test/bootstrap ./.test-tmp/test/**/*.spec.js",
+    "postbuild": "node ./scripts/copy-package && node ./scripts/copy-dist-files",
     "posttest": "del-cli ./.test-tmp",
+    "prebuild": "del-cli ./dist && npm run test && npm run lint",
     "precoverage": "del-cli ./coverage",
-    "coverage": "nyc --reporter lcov --reporter text --reporter text-summary --exclude \"**/test/**\" --report-dir ./coverage npm run test"
+    "pretest": "del-cli ./.test-tmp && tsc -p ./tsconfig.test.json",
+    "test": "mocha --ui bdd --require ./.test-tmp/test/bootstrap ./.test-tmp/test/**/*.spec.js"
   },
   "license": "MIT",
   "dependencies": {
@@ -25,6 +26,7 @@
   "devDependencies": {
     "chai": "^3.5.0",
     "chai-as-promised": "^6.0.0",
+    "coveralls": "^2.11.15",
     "del-cli": "^0.2.0",
     "mocha": "^3.2.0",
     "mock-knex": "^0.3.7",
