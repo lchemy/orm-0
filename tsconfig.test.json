@@ -1,22 +1,11 @@
 {
+	"extends": "./tsconfig.json",
     "compilerOptions": {
-        "module": "commonjs",
-        "target": "es2015",
-        "moduleResolution": "node",
-        "experimentalDecorators": true,
+		"sourceMap": true,
         "emitDecoratorMetadata": true,
-		"strictNullChecks": true,
-		"allowUnreachableCode": false,
-		"allowUnusedLabels": false,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
+		"noEmit": false,
 		"rootDir": ".",
 		"baseUrl": ".",
         "outDir": ".test-tmp"
-    },
-    "include": [
-        "./src/**/*.ts",
-		"./test/**/*.ts",
-		"./typings/**/*.d.ts"
-    ]
+    }
 }

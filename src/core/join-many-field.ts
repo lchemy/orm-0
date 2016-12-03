@@ -24,4 +24,8 @@ export class JoinManyField<J extends Orm, F extends Orm> {
 	notExists(value?: SubqueryFilterValue<J, F>): NotExistsFilterNode<J, F> {
 		return new NotExistsFilterNode(this, value);
 	}
+
+	toString(): string {
+		return this.path.join(".");
+	}
 }

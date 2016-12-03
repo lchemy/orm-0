@@ -3,6 +3,28 @@ import { Field } from "./field";
 import { JoinManyField } from "./join-many-field";
 import { Orm } from "./orm";
 
+// used for debugging
+const OPERATOR_SYMBOL_MAP: { [operator: number]: string } = {
+	[FilterOperator.EQ]:			"eq",
+	[FilterOperator.NEQ]:			"neq",
+	[FilterOperator.GT]:			"gt",
+	[FilterOperator.GTE]:			"gte",
+	[FilterOperator.LT]:			"lt",
+	[FilterOperator.LTE]:			"lte",
+	[FilterOperator.LIKE]:			"like",
+	[FilterOperator.NOT_LIKE]:		"not like",
+	[FilterOperator.BETWEEN]:		"between",
+	[FilterOperator.NOT_BETWEEN]:	"not between",
+	[FilterOperator.IN]:			"in",
+	[FilterOperator.NOT_IN]:		"not in",
+	[FilterOperator.IS_NULL]:		"is null",
+	[FilterOperator.IS_NOT_NULL]:	"is not null"
+};
+const GROUPING_SYMBOL_MAP: { [grouping: number]: string } = {
+	[FilterGrouping.AND]:           "and",
+	[FilterGrouping.OR]:            "or"
+};
+
 export abstract class FilterNode {
 	abstract operator: FilterOperator;
 
@@ -16,6 +38,7 @@ export abstract class FilterNode {
 	}
 
 	abstract clone(): FilterNode;
+	abstract toString(): string;
 }
 
 export abstract class OpFilterNode<T, U> extends FilterNode {
@@ -40,6 +63,34 @@ export abstract class OpFilterNode<T, U> extends FilterNode {
 		}
 		this.fields = fields;
 	}
+
+	toString(): string {
+		let field: string = this.field.toString(),
+			operator: string = OPERATOR_SYMBOL_MAP[this.operator],
+			value: string;
+		if (Array.isArray(this.value)) {
+			value = this.value.map(filterValueToString).join(", ");
+		} else {
+			value = filterValueToString(this.value);
+		}
+		return `${ field } ${ operator } ${ value }`;
+	}
+}
+
+function filterValueToString(value: any): string {
+	if (value instanceof Field) {
+		return value.toString();
+	}
+	if (value instanceof Date) {
+		return `${ value.getFullYear() }-${ value.getMonth() + 1 }-${ value.getDate() } ${ value.getHours() }:${ value.getMinutes() }:${ value.getSeconds() }`;
+	}
+	if (typeof value === "number" || typeof value === "boolean") {
+		return String(value);
+	}
+	if (typeof value === "string") {
+		return `"${ value }"`;
+	}
+	return "<<INVALID VALUE: ${ value }>>";
 }
 
 export type SubqueryFilterValue<J extends Orm, F extends Orm> = (orm: J, fromOrm: F) => Filter;
@@ -61,6 +112,17 @@ export abstract class JoinManyFilterNode<J extends Orm, F extends Orm> extends F
 			return [];
 		}
 		return this.value.fields;
+	}
+
+	toString(): string {
+		let field: string = this.field.toString(),
+			operator: string = OPERATOR_SYMBOL_MAP[this.operator],
+			value: string | undefined = this.value != null ? this.value.toString() : undefined;
+		if (value == null) {
+			return `${ field } ${ operator }`;
+		} else {
+			return `${ field } ${ operator } ${ value }`;
+		}
 	}
 }
 
@@ -84,6 +146,12 @@ export abstract class FilterGroup {
 	abstract or(...expressions: Filter[]): OrFilterGroup;
 
 	abstract clone(): FilterGroup;
+
+	toString(): string {
+		let grouping: string = GROUPING_SYMBOL_MAP[this.grouping],
+			expressions: string = this.expressions.map((expression) => expression.toString()).join(` ${ grouping } `);
+		return `(${ expressions })`;
+	}
 }
 
 export type Filter = FilterNode | FilterGroup;

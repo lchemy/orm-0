@@ -26,10 +26,10 @@ export enum AttachFilterMode {
 };
 
 export function attachFilter(builder: Knex.QueryBuilder, filter: Filter, mode: AttachFilterMode): Knex.QueryBuilder {
-	return attachFilterInner(builder, filter, mode, undefined);
+	return attachFilterHelper(builder, filter, mode, undefined);
 }
 
-function attachFilterInner(builder: Knex.QueryBuilder, filter: Filter, mode: AttachFilterMode, grouping?: FilterGrouping): Knex.QueryBuilder {
+function attachFilterHelper(builder: Knex.QueryBuilder, filter: Filter, mode: AttachFilterMode, grouping?: FilterGrouping): Knex.QueryBuilder {
 	let fnName: string = getBuilderFnName(mode, grouping);
 
 	if (filter instanceof OpFilterNode) {
@@ -39,7 +39,7 @@ function attachFilterInner(builder: Knex.QueryBuilder, filter: Filter, mode: Att
 	if (filter instanceof FilterGroup) {
 		return builder[fnName](function (this: Knex.QueryBuilder): void {
 			filter.expressions.reduce((b: Knex.QueryBuilder | undefined, expr: Filter) => {
-				return attachFilterInner(b == null ? this : b, expr, mode, b == null ? undefined : filter.grouping);
+				return attachFilterHelper(b == null ? this : b, expr, mode, b == null ? undefined : filter.grouping);
 			}, undefined);
 		}) as Knex.QueryBuilder;
 	}
@@ -154,7 +154,7 @@ function translateJoinManyFilterNode(filter: JoinManyFilterNode<any, any>): (thi
 				throughTableAlias: string = `${ throughOrmProperties.table } AS ${ throughOrmProperties.tableAs }`;
 			// tslint:disable-next-line:no-shadowed-variable
 			query.leftJoin(throughTableAlias, function (this: Knex.QueryBuilder): void {
-				attachFilterInner(this, joinExpr.on, AttachFilterMode.ON);
+				attachFilterHelper(this, joinExpr.on, AttachFilterMode.ON);
 			});
 		});
 
@@ -162,6 +162,6 @@ function translateJoinManyFilterNode(filter: JoinManyFilterNode<any, any>): (thi
 		if (filter.value != null) {
 			joinFilter = joinFilter.and(filter.value);
 		}
-		attachFilterInner(this, joinFilter, AttachFilterMode.WHERE);
+		attachFilterHelper(this, joinFilter, AttachFilterMode.WHERE);
 	};
 }

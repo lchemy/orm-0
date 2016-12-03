@@ -69,4 +69,8 @@ export abstract class Orm {
 		};
 		this[ORM_PROPERTIES] = properties;
 	}
+
+	toString(): string {
+		return (this[ORM_PROPERTIES] as OrmProperties).path.join(".");
+	}
 }

@@ -63,6 +63,10 @@ export abstract class Field<O extends Orm, T> {
 	isNotNull(): IsNotNullFilterNode<T> {
 		return new IsNotNullFilterNode(this);
 	}
+
+	toString(): string {
+		return this.columnAs;
+	}
 }
 
 export abstract class ComparableField<O, T> extends Field<O, T> {

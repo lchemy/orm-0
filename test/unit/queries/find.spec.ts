@@ -11,7 +11,7 @@ import {
 
 describe("find queries", () => {
 	let queryCount: number;
-	let queryListener: (data: any) => void = () => {
+	let queryListener: () => void = () => {
 		queryCount++;
 	};
 	let data: Data;
@@ -110,7 +110,13 @@ describe("find queries", () => {
 	});
 
 	it("should find all states with count", () => {
-		return findAllWithCount<StateOrm>("states").then(({ rows: states, count }: { rows: State[], count: number }) => {
+		return findAllWithCount<StateOrm>("states", () => {
+			return {
+				pagination: {
+					limit: null
+				}
+			};
+		}).then(({ rows: states, count }: { rows: State[], count: number }) => {
 			expect(states.length).to.eq(data.states.length);
 			expect(count).to.eq(data.states.length);
 		});
@@ -179,7 +185,7 @@ describe("find queries", () => {
 	it("should find cities by ids", () => {
 		let cityIds: number[] = data.cities.filter(() => Math.random() > .25).map((city) => city.id);
 
-		return findByIds<CityOrm>("cities", cityIds).then((cities: city[]) => {
+		return findByIds<CityOrm>("cities", cityIds).then((cities: City[]) => {
 			expect(cities.length).to.eq(cityIds.length);
 			cities.forEach((city) => {
 				expect(city.id).to.be.oneOf(cityIds);

@@ -33,4 +33,8 @@ export class CompositeField {
 		};
 		this[COMPOSITE_FIELD_PROPERTIES] = properties;
 	}
+
+	toString(): string {
+		return (this[COMPOSITE_FIELD_PROPERTIES] as CompositeProperties).path.join(".");
+	}
 }

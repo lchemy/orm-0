@@ -1,16 +1,9 @@
 {
+	"extends": "./tsconfig.json",
     "compilerOptions": {
-        "module": "commonjs",
-        "target": "es2015",
-        "moduleResolution": "node",
 		"declaration": true,
-        "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
-		"strictNullChecks": true,
-		"allowUnreachableCode": false,
-		"allowUnusedLabels": false,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
+		"noEmit": false,
 		"rootDir": "./src",
 		"baseUrl": ".",
         "outDir": "dist"

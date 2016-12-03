@@ -12,7 +12,7 @@ export interface FindOneQuery {
 
 export interface FindAllQuery extends FindOneQuery {
 	sorts?: RawFindSortField[];
-	pagination?: { offset?: number, limit?: number };
+	pagination?: { offset?: number, limit?: number | null };
 }
 
 export interface FindAllWithCountResult<M> {
@@ -33,7 +33,7 @@ export function findOne<O extends Orm, M, A>(ref: string | symbol | O, builder?:
 			auth: auth
 		}, trx);
 	}).then((rows: Object[]) => {
-		return rows[0];
+		return rows[0] as M;
 	});
 }
 
@@ -151,7 +151,7 @@ export function findById<O extends Orm, M, A>(
 			auth: auth
 		}, trx);
 	}).then((rows: Object[]) => {
-		return rows[0];
+		return rows[0] as M;
 	});
 }
 

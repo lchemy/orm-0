@@ -275,7 +275,10 @@ describe("execute find", () => {
 					stateOrm.id,
 					stateOrm.name
 				],
-				filter: stateOrm.name.like("%1%")
+				filter: stateOrm.name.like("%1%"),
+				pagination: {
+					limit: null
+				}
 			}).then((states: State[]) => {
 				expect(queryCount).to.eq(1);
 				states.forEach((state) => {
@@ -303,7 +306,10 @@ describe("execute find", () => {
 					stateOrm.country.id,
 					stateOrm.country.name
 				],
-				filter: stateOrm.country.name.like("%1%")
+				filter: stateOrm.country.name.like("%1%"),
+				pagination: {
+					limit: null
+				}
 			}).then((states: any[]) => {
 				expect(queryCount).to.eq(1);
 				states.forEach((state) => {
@@ -333,7 +339,10 @@ describe("execute find", () => {
 				],
 				filter: stateOrm.cities.exists((city: CityOrm) => {
 					return city.name.like("%1%");
-				})
+				}),
+				pagination: {
+					limit: null
+				}
 			}).then((states: any[]) => {
 				expect(queryCount).to.eq(2);
 				states.forEach((state) => {
@@ -509,7 +518,7 @@ describe("execute find", () => {
 		});
 	});
 
-	it("should get countries with auth", () => {
+	it("should get countries from continents with auth", () => {
 		return definitions.then(({ continentOrm }) => {
 			let countryIds: number[] = data.countries.map((country) => country.id),
 				allowedCountryIds: number[] = countryIds.slice(0, Math.floor(countryIds.length / 2));
@@ -537,32 +546,35 @@ describe("execute find", () => {
 		});
 	});
 
-	it("should get continents from countries with auth", () => {
-		return definitions.then(({ countryOrm }) => {
-			let continentIds: number[] = data.continents.map((continent) => continent.id),
-				allowedContinentIds: number[] = continentIds.slice(0, Math.floor(continentIds.length / 2));
+	it("should get countries from states with auth", () => {
+		return definitions.then(({ stateOrm }) => {
+			let countryIds: number[] = data.countries.map((country) => country.id),
+				allowedCountryIds: number[] = countryIds.slice(0, Math.floor(countryIds.length / 2));
 
-			return executeFind(countryOrm, {
+			return executeFind(stateOrm, {
 				fields: [
-					countryOrm,
-					countryOrm.continent
+					stateOrm,
+					stateOrm.country
 				],
 				auth: {
 					isAdmin: false,
-					allowedContinentIds: allowedContinentIds
+					allowedCountryIds: allowedCountryIds
+				},
+				pagination: {
+					limit: null
 				}
-			}).then((countries: Country[]) => {
-				let continents: Continent[] = Array.from(countries.reduce((memo, country) => {
-					if (country.continent.id != null) {
-						memo.set(country.continent.id, country.continent);
+			}).then((states: State[]) => {
+				let countries: Country[] = Array.from(states.reduce((memo, state) => {
+					if (state.country.id != null) {
+						memo.set(state.country.id, state.country);
 					}
 					return memo;
-				}, new Map<number, Continent>()).values());
+				}, new Map<number, Country>()).values());
 
-				expect(continents.length).to.eq(allowedContinentIds.length);
+				expect(countries.length).to.eq(allowedCountryIds.length);
 
-				continents.forEach((continent) => {
-					expect(continent.id).to.be.oneOf(allowedContinentIds);
+				countries.forEach((country) => {
+					expect(country.id).to.be.oneOf(allowedCountryIds);
 				});
 			});
 		});

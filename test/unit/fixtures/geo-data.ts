@@ -137,7 +137,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 		}
 		return continent.id.in(...auth.allowedContinentIds);
 	}),
-	define<CountryOrm>({
+	define<CountryOrm, AuthUser>({
 		ref: "countries",
 		table: `countries_${ ID }`
 	}, (field, join) => {
@@ -163,6 +163,11 @@ export const definitions: Promise<Definitions> = Promise.all([
 				return countriesLanguagesJoin.countryId.eq(country.id);
 			})
 		};
+	}, (auth, country) => {
+		if (auth.isAdmin || auth.allowedCountryIds == null) {
+			return;
+		}
+		return country.id.in(...auth.allowedCountryIds);
 	}),
 	define<StateOrm>({
 		ref: "states",
@@ -221,17 +226,18 @@ export const definitions: Promise<Definitions> = Promise.all([
 			languageId: field.String("language_id")
 		};
 	})
-]).then(([continentOrm, countryOrm, stateOrm, cityOrm, countriesLangaugesJoinOrm]) => {
+]).then(([continentOrm, countryOrm, stateOrm, cityOrm, languageOrm, countriesLanguagesJoinOrm]) => {
 	return {
-		continentOrm: continentOrm,
-		countryOrm: countryOrm,
-		stateOrm: stateOrm,
-		cityOrm: cityOrm,
-		countriesLangaugesJoinOrm: countriesLangaugesJoinOrm
+		continentOrm,
+		countryOrm,
+		stateOrm,
+		cityOrm,
+		languageOrm,
+		countriesLanguagesJoinOrm
 	};
 });
 
-export function createTables(): Promise<void> {
+export function createTables(): Promise<any> {
 	return Promise.all([
 		knex.raw(`
 			CREATE TEMPORARY TABLE continents_${ ID } (
@@ -278,7 +284,7 @@ export function createTables(): Promise<void> {
 	]);
 }
 
-export function clearData(): Promise<void> {
+export function clearData(): Promise<any> {
 	return Promise.all([
 		knex.raw(`
 			DELETE FROM countries_languages_${ ID };
@@ -304,7 +310,7 @@ export function clearData(): Promise<void> {
 	});
 }
 
-export function deleteTables(): Promise<void> {
+export function deleteTables(): Promise<any> {
 	return Promise.all([
 		knex.raw(`
 			DROP TABLE IF EXISTS continents_${ ID };
@@ -336,7 +342,7 @@ export type Data = {
 	countriesLanguagesJoins: CountriesLanguagesJoin[]
 };
 export function mockData(): Promise<Data> {
-	let continentsPromise: Promise<Continent[]> = Array(3).fill(undefined).reduce((p) => {
+	let continentsPromise: Promise<Continent[]> = Array(6).fill(undefined).reduce((p) => {
 		return p.then(() => {
 			return knex(`continents_${ ID }`).insert({
 				name: randomString()
@@ -355,7 +361,7 @@ export function mockData(): Promise<Data> {
 		});
 	});
 
-	let languagesPromise: Promise<Language[]> = Array(5).fill(undefined).reduce((p) => {
+	let languagesPromise: Promise<Language[]> = Array(10).fill(undefined).reduce((p) => {
 		return p.then(() => {
 			return knex(`languages_${ ID }`).insert({
 				name: randomString()
@@ -375,16 +381,18 @@ export function mockData(): Promise<Data> {
 	});
 
 	let countriesPromise: Promise<Country[]> = continentsPromise.then((continents) => {
-		return Array(10).fill(undefined).reduce((p) => {
-			return p.then(() => {
-				return knex(`countries_${ ID }`).insert({
-					continent_id: randomArrayValue(continents).id,
-					name: randomString(),
-					population: (Math.random() * 10000 + 1000) | 0,
-					gdp: (Math.random() * 100000 + 100) | 0
+		return continents.reduce((p, continent) => {
+			return Array((Math.random() * 5 + 1) | 0).fill(undefined).reduce((q) => {
+				return q.then(() => {
+					return knex(`countries_${ ID }`).insert({
+						continent_id: continent.id,
+						name: randomString(),
+						population: (Math.random() * 10000 + 1000) | 0,
+						gdp: (Math.random() * 100000 + 100) | 0
+					});
 				});
-			});
-		}, Promise.resolve()).then(() => {
+			}, p);
+		}, Promise.resolve()).then<Country[]>(() => {
 			return knex(`countries_${ ID }`).select(["id", "name", "population", "gdp", "continent_id"]).then((rows) => {
 				return rows.map((row) => {
 					let continent: Continent = continents.find((c) => c.id === row.continent_id)!;
@@ -409,14 +417,16 @@ export function mockData(): Promise<Data> {
 	});
 
 	let statesPromise: Promise<State[]> = countriesPromise.then((countries) => {
-		return Array(30).fill(undefined).reduce((p) => {
-			return p.then(() => {
-				return knex(`states_${ ID }`).insert({
-					country_id: randomArrayValue(countries).id,
-					name: randomString()
+		return countries.reduce((p, country) => {
+			return Array((Math.random() * 10 + 1) | 0).fill(undefined).reduce((q) => {
+				return q.then(() => {
+					return knex(`states_${ ID }`).insert({
+						country_id: country.id,
+						name: randomString()
+					});
 				});
-			});
-		}, Promise.resolve()).then(() => {
+			}, p);
+		}, Promise.resolve()).then<State[]>(() => {
 			return knex(`states_${ ID }`).select(["id", "name", "country_id"]).then((rows) => {
 				return rows.map((row) => {
 					let country: Country = countries.find((c) => c.id === row.country_id)!;
@@ -436,14 +446,16 @@ export function mockData(): Promise<Data> {
 	});
 
 	let citiesPromise: Promise<City[]> = statesPromise.then((states) => {
-		return Array(100).fill(undefined).reduce((p) => {
-			return p.then(() => {
-				return knex(`cities_${ ID }`).insert({
-					state_id: randomArrayValue(states).id,
-					name: randomString()
+		return states.reduce((p, state) => {
+			return Array((Math.random() * 10 + 1) | 0).fill(undefined).reduce((q) => {
+				return q.then(() => {
+					return knex(`cities_${ ID }`).insert({
+						state_id: state.id,
+						name: randomString()
+					});
 				});
-			});
-		}, Promise.resolve()).then(() => {
+			}, p);
+		}, Promise.resolve()).then<City[]>(() => {
 			return knex(`cities_${ ID }`).select(["id", "name", "state_id"]).then((rows) => {
 				return rows.map((row) => {
 					let state: State = states.find((s) => s.id === row.state_id)!;
@@ -464,7 +476,7 @@ export function mockData(): Promise<Data> {
 		countriesPromise,
 		languagesPromise
 	]).then(([countries, languages]) => {
-		return Array(30).fill(undefined).reduce((memo) => {
+		return Array(countries.length * 3).fill(undefined).reduce((memo) => {
 			let countryId: number,
 				languageId: number;
 			do {

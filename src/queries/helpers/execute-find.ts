@@ -1,7 +1,7 @@
 import * as Knex from "knex";
 
 import { knex } from "../../config/knex";
-import { CompositeField, Field, Filter, JoinManyField, Orm, OrmJoinOn, OrmProperties, SortDirection } from "../../core";
+import { CompositeField, CompositeProperties, Field, Filter, JoinManyField, Orm, OrmJoinOn, OrmProperties, SortDirection } from "../../core";
 import { AttachFilterMode, attachFilter } from "./attach-filter";
 import { hydrateFilter } from "./hydrate-filter";
 import { JoinResultContainer, mergeResultSets } from "./merge-result-sets";
@@ -9,18 +9,40 @@ import { unflatten } from "./unflatten";
 
 export type FindQueryField = Field<any, any> | CompositeField | JoinManyField<any, any> | Orm;
 export type FindSortField = Field<any, any> | { field: Field<any, any>, direction?: SortDirection };
+export type FindPagination = { offset?: number, limit?: number | null };
 
 export interface FindQuery {
 	count?: boolean;
 	fields?: FindQueryField[];
 	filter?: Filter;
 	sorts?: FindSortField[];
-	pagination?: { offset?: number, limit?: number | null };
+	pagination?: FindPagination;
 	auth?: any;
 }
 
+// internal helper types
+type OrmField = Field<Orm, any>;
+type OrmFields = Set<OrmField>;
+interface QueryData {
+	fieldsMap: Map<Orm, OrmFields>;
+	filterMap: Map<Orm, Filter>;
+	relatedOrms: Orm[];
+}
+interface ExecutionTreeNode {
+	children: ExecutionTreeNode[];
+	orm: Orm;
+	joinOrms: Orm[];
+	fields: OrmFields;
+	filter?: Filter;
+}
+
 export function executeFind(orm: Orm, query: FindQuery = {}, trx?: Knex.Transaction): Promise<number | Object[]> {
-	return executeFindInner(orm, orm, query, trx).then((result) => {
+	if (Orm.getProperties(orm).root !== orm) {
+		throw new Error(`Cannot execute find query for non-root orm: ${ Orm.getProperties(orm).tableAs }`);
+	}
+
+	let node: ExecutionTreeNode = buildExecutionTree(orm, query);
+	return executeNode(node, query, trx).then((result) => {
 		if (typeof result === "number") {
 			return result;
 		}
@@ -28,302 +50,312 @@ export function executeFind(orm: Orm, query: FindQuery = {}, trx?: Knex.Transact
 	});
 }
 
-function executeFindInner(orm: Orm, baseOrm: Orm, query: FindQuery, trx?: Knex.Transaction): Promise<number | Object[]> {
-	let ormProperties: OrmProperties = Orm.getProperties(orm);
+function buildExecutionTree(orm: Orm, query: FindQuery): ExecutionTreeNode {
+	let data: QueryData = getQueryData(orm, query);
 
-	let builder: Knex.QueryBuilder;
-	if (ormProperties.table === ormProperties.tableAs) {
-		builder = knex.table(ormProperties.table);
-	} else {
-		builder = knex.table(`${ ormProperties.table } AS ${ ormProperties.tableAs }`);
+	if (query.count) {
+		return createTreeNode(orm, data);
 	}
 
+	let baseOrms: Orm[] = Array.from(new Set<Orm>(data.relatedOrms.map(getBase))),
+		baseOrmsNodeMap: Map<Orm, ExecutionTreeNode> = new Map<Orm, ExecutionTreeNode>();
+
+	baseOrms.forEach((baseOrm) => {
+		baseOrmsNodeMap.set(baseOrm, createTreeNode(baseOrm, data));
+	});
+	baseOrms.forEach((baseOrm) => {
+		let node: ExecutionTreeNode = baseOrmsNodeMap.get(baseOrm)!,
+			parentOrm: Orm | undefined = Orm.getProperties(baseOrm).parent,
+			parentBaseOrm: Orm | undefined = parentOrm != null ? getBase(parentOrm) : undefined;
+		if (parentBaseOrm) {
+			baseOrmsNodeMap.get(parentBaseOrm)!.children.push(node);
+		}
+	});
+
+	return baseOrmsNodeMap.get(orm)!;
+}
+
+function createTreeNode(baseOrm: Orm, data: QueryData): ExecutionTreeNode {
+	return  {
+		orm: baseOrm,
+		children: [],
+		joinOrms: getJoinOrms(baseOrm, data.relatedOrms),
+		fields: data.fieldsMap.get(baseOrm) || new Set<OrmField>(),
+		filter: data.filterMap.get(baseOrm)
+	};
+}
+
+function getQueryData(orm: Orm, query: FindQuery): QueryData {
+	let data: QueryData = {
+		fieldsMap: new Map<Orm, OrmFields>(),
+		filterMap: new Map<Orm, Filter>(),
+		relatedOrms: []
+	};
+
+	data = addRelatedOrm(orm, query, data);
+
+	if (query.filter != null) {
+		data = addFilter(orm, query.filter, query, data);
+	}
+
+	// only include query fields if count is true
+	if (!query.count) {
+		let queryFields: FindQueryField[] | undefined = query.fields;
+		if (queryFields == null || queryFields.length === 0) {
+			queryFields = Array.from(getDefaultFields(orm));
+		}
+		queryFields.forEach((field) => {
+			if (field instanceof Field) {
+				data = addField(field, query, data);
+			} else {
+				getDefaultFields(field).forEach((f) => {
+					data = addField(f, query, data);
+				});
+			}
+		});
+	}
+
+	return data;
+}
+
+function addRelatedOrm(relatedOrm: Orm, query: FindQuery, data: QueryData): QueryData {
+	let relatedOrmProperties: OrmProperties = Orm.getProperties(relatedOrm);
+	if (data.relatedOrms.indexOf(relatedOrm) >= 0) {
+		return data;
+	}
+
+	// add parent as related orm before adding current
+	if (relatedOrmProperties.parent != null) {
+		data = addRelatedOrm(relatedOrmProperties.parent, query, data);
+	}
+	data.relatedOrms.push(relatedOrm);
+
+	// if auth is available, add auth filter
+	if (relatedOrmProperties.auth != null && query.auth != null) {
+		let authFilter: Filter | undefined = relatedOrmProperties.auth(query.auth);
+		if (authFilter != null) {
+			data = addFilter(relatedOrm, authFilter, query, data);
+		}
+	}
+
+	// if not count and join many, add required fields
+	if (!query.count && relatedOrmProperties.join != null && relatedOrmProperties.join.many != null) {
+		relatedOrmProperties.join.many.requiredBaseFields.forEach((f) => {
+			data = addField(f, query, data);
+		});
+		relatedOrmProperties.join.many.requiredJoinFields.forEach((f) => {
+			data = addField(f, query, data);
+		});
+	}
+
+	return data;
+}
+
+function addField(field: OrmField, query: FindQuery, data: QueryData): QueryData {
+	let baseOrm: Orm = getBase(field.orm),
+		fields: OrmFields | undefined = data.fieldsMap.get(baseOrm);
+	if (fields == null) {
+		fields = new Set<OrmField>();
+		data.fieldsMap.set(baseOrm, fields);
+	}
+
+	if (fields.has(field)) {
+		return data;
+	}
+	fields.add(field);
+
+	// add field's orm as related orm
+	data = addRelatedOrm(field.orm, query, data);
+
+	return data;
+}
+
+function addFilter(orm: Orm, newFilter: Filter, query: FindQuery, data: QueryData): QueryData {
+	let baseOrm: Orm = getBase(orm),
+		filter: Filter | undefined = data.filterMap.get(baseOrm);
+
+	// set or append new filter to current filter
+	filter = filter != null ? filter.and(newFilter) : newFilter;
+	data.filterMap.set(baseOrm, filter);
+
+	// add new filter fields' orms as related orms
+	newFilter.fields.forEach((f) => {
+		data = addRelatedOrm(f.orm, query, data);
+	});
+
+	return data;
+}
+
+function executeNode(node: ExecutionTreeNode, query: FindQuery, trx?: Knex.Transaction): Promise<number | Object[]> {
+	// initialize builder
+	let { table, tableAs }: OrmProperties = Orm.getProperties(node.orm);
+
+	let builder: Knex.QueryBuilder;
+	if (table === tableAs) {
+		builder = knex.table(table);
+	} else {
+		builder = knex.table(`${ table } AS ${ tableAs }`);
+	}
+
+	// attach transaction if available
 	if (trx != null) {
 		builder.transacting(trx);
 	}
 
-	let ormFieldsMap: OrmFieldsMap,
-		fields: Set<Field<any, any>> = new Set();
-
-	// SELECT
-	if (!!query.count) {
-		builder.count("* AS count");
-
-		ormFieldsMap = new Map();
-	} else {
-		let selectFields: Set<Field<any, any>>;
-		if (query.fields == null || query.fields.length === 0) {
-			// TODO: get default fields
-			selectFields = getDefaultFields(orm);
-		} else {
-			selectFields = new Set();
-			query.fields.forEach((field: FindQueryField) => {
-				if (field instanceof Field) {
-					selectFields.add(field);
-				} else {
-					getDefaultFields(field).forEach((defaultField) => {
-						selectFields.add(defaultField);
-					});
-				}
-			});
-		}
-		ormFieldsMap = getOrmFieldsMap(selectFields, orm, baseOrm);
-
-		let fieldOrms: Set<Orm> = new Set<Orm>([orm]);
-		selectFields.forEach((field: Field<any, any>) => {
-			if (Orm.getProperties(field.orm).base === baseOrm) {
-				fieldOrms.add(field.orm);
-			}
-		});
-
-		fieldOrms.forEach((fieldOrm) => {
-			let ormFields: Set<Field<any, any>> | undefined = ormFieldsMap.get(fieldOrm);
-			if (ormFields == null) {
-				return;
-			}
-			ormFields.forEach((field) => {
-				fields.add(field);
-			});
-		});
-
-		if (ormProperties.join != null && ormProperties.join.many != null) {
-			ormProperties.join.many.requiredJoinFields.forEach((field) => {
-				fields.add(field);
-			});
-		}
-
-		if (fields == null || fields.size === 0) {
-			// probably selecting only from some unbounded join many
-			// TODO: should this be an error instead?
-		}
-		let namedColumns: string[] = Array.from(fields).map((field) => {
-			return `${field.aliasedColumn} AS ${field.columnAs}`;
-		});
-		if (namedColumns.length === 0) {
-			namedColumns.push(`1 AS ${ ormProperties.tableAs }.__`);
-		}
-		builder.select(namedColumns);
-	}
-
-	// TODO: refactor this part
-	let filter: Filter | undefined;
-	let relatedOrms: Set<Orm> = new Set();
-	let addRelatedOrm: (relatedOrm: Orm) => boolean = (relatedOrm: Orm) => {
-		let relatedOrmProperties: OrmProperties = Orm.getProperties(relatedOrm);
-		if (relatedOrmProperties.base !== baseOrm) {
-			return false;
-		}
-		if (relatedOrms.has(relatedOrm)) {
-			return true;
-		}
-
-		relatedOrms.add(relatedOrm);
-		if (relatedOrmProperties.parent != null) {
-			addRelatedOrm(relatedOrmProperties.parent);
-		}
-		if (relatedOrmProperties.join != null) {
-			addJoinOrm(relatedOrm);
-		}
-		if (relatedOrmProperties.auth && query.auth) {
-			addFilter(relatedOrmProperties.auth(query.auth));
-		}
-		return true;
-	};
-	let addFilter: (newFilter?: Filter) => void = (newFilter?: Filter) => {
-		if (newFilter == null) {
-			return;
-		}
-
-		if (filter == null) {
-			filter = newFilter;
-		} else {
-			filter = filter.and(newFilter);
-		}
-		filter.fields.filter((field) => {
-			return addRelatedOrm(field.orm);
-		}).forEach((field) => {
-			fields.add(field);
-		});
-	};
-	let addJoinOrm: (joinOrm: Orm) => void = (joinOrm: Orm) => {
-		// TODO: this is really add join orms and through orms of current orm
-		let joinOrmProperties: OrmProperties = Orm.getProperties(joinOrm),
-			joins: OrmJoinOn[] = joinOrmProperties.join!.through;
-		if (joinOrm !== orm) {
-			joins = joins.concat([{
-				orm: joinOrm,
-				on: joinOrmProperties.join!.on
-			}]);
-		}
-		joins.slice().reverse().forEach((join) => {
-			let innerJoinOrmProperties: OrmProperties = Orm.getProperties(join.orm),
-				innerJoinTableAlias: string = `${ innerJoinOrmProperties.table } AS ${ innerJoinOrmProperties.tableAs }`;
-			builder.leftJoin(innerJoinTableAlias, function (this: Knex.QueryBuilder): void {
-				attachFilter(this, join.on, AttachFilterMode.ON);
-			});
-		});
-	};
-
-	addRelatedOrm(orm);
-	fields.forEach((field) => {
-		addRelatedOrm(field.orm);
-	});
-	addFilter(query.filter);
+	// JOIN
+	node.joinOrms.forEach((joinOrm) => attachJoin(builder, node.orm, joinOrm));
 
 	// WHERE
-	if (filter != null) {
-		attachFilter(builder, filter, AttachFilterMode.WHERE);
+	if (node.filter != null) {
+		attachFilter(builder, node.filter, AttachFilterMode.WHERE);
 	}
 
-	// ORDER BY
-	if (query.sorts) {
-		query.sorts.forEach((sort) => {
-			if (sort instanceof Field) {
-				builder.orderBy(sort.aliasedColumn, "ASC");
-			} else {
-				builder.orderBy(sort.field.aliasedColumn, sort.direction === SortDirection.DESCENDING ? "DESC" : "ASC");
-			}
-		});
-	}
+	if (query.count) {
+		// SELECT
+		builder.count("* as $count");
 
-	// LIMIT
-	if (!query.count && ormProperties.root === orm) {
-		let offset: number = 0,
-			limit: number | null = 50;
-		if (query.pagination != null) {
-			if (query.pagination.offset != null) {
-				offset = Math.max(0, query.pagination.offset);
-			}
-			if (query.pagination.limit == null) {
-				limit = null;
-			} else if (query.pagination.limit !== undefined) {
-				limit = Math.max(0, query.pagination.limit);
-			}
-		}
-		builder.offset(offset);
-		if (limit != null) {
-			builder.limit(limit);
-		}
-	}
-
-	if (!!query.count) {
-		// TODO: bluebird is not happy?
-		return builder.then((result) => {
-			if (result == null || result.length === 0) {
-				return 0;
-			}
-			return result[0].count || 0;
+		// execute the query
+		return builder.then((res) => {
+			return (res != null && res.length > 0 ? res[0].$count : 0) || 0;
 		}) as any as Promise<number>;
-	}
+	} else {
+		// SELECT
+		attachFields(builder, node.fields);
 
+		// ORDER BY
+		if (query.sorts != null) {
+			attachSorts(builder, query.sorts);
+		}
 
-	if (ormFieldsMap.size <= 1) {
-		// TODO: bluebird is not happy?
-		return builder.then((result) => {
-			return result;
+		// OFFSET, LIMIT
+		attachPagination(builder, query.pagination);
+
+		// execute the query
+		return builder.then((baseResults) => {
+			if (baseResults.length === 0 || node.children.length === 0) {
+				return baseResults;
+			}
+			return executeNodeChildren(node, baseResults, trx);
 		}) as any as Promise<Object[]>;
 	}
+}
 
-	// TODO: handle distinct or something?
-	return builder.then((baseResults) => {
-		if (baseResults.length === 0) {
-			return baseResults;
+function executeNodeChildren(node: ExecutionTreeNode, baseResults: Object[], trx?: Knex.Transaction): Promise<Object[]> {
+	let promises: Array<Promise<JoinResultContainer>> = node.children.map((joinNode) => {
+		if (node.orm === joinNode.orm || getBase(node.orm) === getBase(joinNode.orm)) {
+			// TODO: this should never happen, throw error? is it even needed?
+			throw new Error(`Something wrong!`);
 		}
 
-		let promises: Array<Promise<JoinResultContainer>> = [];
-		ormFieldsMap.forEach((joinFields: Set<Field<any, any>>, joinOrm: Orm) => {
-			if (joinOrm === orm) {
-				return;
+		// get join filter
+		let joinFilter: Filter = Orm.getProperties(joinNode.orm).join!.on,
+			hydratedJoinFilter: Filter = hydrateFilter(joinFilter, node.orm, baseResults);
+
+		joinNode.filter = joinNode.filter != null ? hydratedJoinFilter.and(joinNode.filter) : hydratedJoinFilter;
+
+		// execute join many
+		return executeNode(joinNode, {
+			count: false,
+			pagination: {
+				limit: null
 			}
-
-			let joinOrmProperties: OrmProperties = Orm.getProperties(joinOrm);
-			if (joinOrmProperties.base === baseOrm) {
-				return;
-			}
-
-			let joinWhere: Filter = joinOrmProperties.join!.on;
-
-			let promise: Promise<JoinResultContainer> = executeFindInner(joinOrm, joinOrm, {
-				fields: Array.from(joinFields),
-				filter: hydrateFilter(joinWhere, orm, baseResults),
-				auth: query.auth
-			}, trx).then((joinResults: Object[]) => {
-				return {
-					results: joinResults,
-					orm: joinOrm,
-					where: joinWhere
-				};
-			});
-
-			promises.push(promise);
+		}, trx).then((joinResults: Object[]) => {
+			return {
+				results: joinResults,
+				orm: joinNode.orm,
+				where: joinFilter
+			};
 		});
-
-		return Promise.all(promises).then((containers) => {
-			return mergeResultSets(baseResults, containers);
-		});
-	}) as any as Promise<Object[]>;
-}
-
-type OrmFieldsMap = Map<Orm, Set<Field<any, any>>>;
-function getOrmFieldsMap(fields: Set<Field<any, any>>, orm: Orm, baseOrm: Orm): OrmFieldsMap {
-	let ormFieldsMap: OrmFieldsMap = new Map();
-
-	fields.forEach((field) => {
-		addToOrmFieldsMap(field, orm, baseOrm, ormFieldsMap);
 	});
 
-	let ormProperties: OrmProperties = Orm.getProperties(orm);
-	if (ormProperties.join != null && ormProperties.join.many != null) {
-		ormProperties.join.many.requiredJoinFields.forEach((field) => {
-			addToOrmFieldsMap(field, orm, baseOrm, ormFieldsMap);
+	return Promise.all(promises).then((containers) => {
+		return mergeResultSets(baseResults, containers);
+	});
+}
+
+function attachFields(builder: Knex.QueryBuilder, fields: OrmFields): void {
+	let namedColumns: string[] = Array.from(fields).map((field) => {
+		return `${field.aliasedColumn} AS ${field.columnAs}`;
+	});
+	if (namedColumns.length === 0) {
+		namedColumns.push(`1 AS __`);
+	}
+	builder.select(namedColumns);
+}
+
+function attachJoin(builder: Knex.QueryBuilder, orm: Orm, joinOrm: Orm): void {
+	let joinOrmProperties: OrmProperties = Orm.getProperties(joinOrm),
+		joins: OrmJoinOn[] = joinOrmProperties.join!.through;
+
+	if (joinOrm !== orm) {
+		joins = joins.concat([{
+			orm: joinOrm,
+			on: joinOrmProperties.join!.on
+		}]);
+	}
+
+	// TODO: do slice().reverse() better?
+	joins.forEach((join) => {
+		let innerJoinOrmProperties: OrmProperties = Orm.getProperties(join.orm),
+			innerJoinTableAlias: string = `${ innerJoinOrmProperties.table } AS ${ innerJoinOrmProperties.tableAs }`;
+		builder.leftJoin(innerJoinTableAlias, function (this: Knex.QueryBuilder): void {
+			attachFilter(this, join.on, AttachFilterMode.ON);
 		});
-	}
-
-	return ormFieldsMap;
+	});
 }
 
-function addToOrmFieldsMap(field: Field<any, any>, orm: Orm, baseOrm: Orm, ormFieldsMap: OrmFieldsMap): void {
-	let fieldBaseOrm: Orm = Orm.getProperties(field.orm).base;
-	if (fieldBaseOrm === baseOrm) {
-		// base orm and field base orm is the same, not a many-to-many join
-		upsertOrmFieldsMap(field, field.orm, ormFieldsMap);
-		return;
+function attachSorts(builder: Knex.QueryBuilder, sorts: FindSortField[]): void {
+	sorts.forEach((sort) => {
+		if (sort instanceof Field) {
+			builder.orderBy(sort.aliasedColumn, "ASC");
+		} else {
+			builder.orderBy(sort.field.aliasedColumn, sort.direction === SortDirection.DESCENDING ? "DESC" : "ASC");
+		}
+	});
+}
+
+function attachPagination(builder: Knex.QueryBuilder, pagination?: FindPagination): void {
+	// TODO: extract default limit somewhere
+	let offset: number = 0,
+		limit: number | null = 50;
+
+	if (pagination != null) {
+		if (pagination.offset != null) {
+			offset = Math.max(0, pagination.offset);
+		}
+
+		if (pagination.limit == null) {
+			limit = null;
+		} else if (pagination.limit !== undefined) {
+			limit = Math.max(0, pagination.limit);
+		}
 	}
 
-	let joinOrm: Orm = fieldBaseOrm,
-		joinOrmProperties: OrmProperties = Orm.getProperties(joinOrm);
-
-	// traverse up parent's bases until parent's base is base orm or no parents exist (how can this happen?)
-	while (joinOrmProperties.parent != null && Orm.getProperties(joinOrmProperties.parent).base !== baseOrm) {
-		joinOrm = Orm.getProperties(joinOrmProperties.parent).base;
-		joinOrmProperties = Orm.getProperties(joinOrm);
-	}
-
-	let addNewJoin: boolean = upsertOrmFieldsMap(field, joinOrm, ormFieldsMap);
-	if (addNewJoin && joinOrmProperties.join != null && joinOrmProperties.join.many != null) {
-		joinOrmProperties.join.many.requiredBaseFields.forEach((innerField) => {
-			addToOrmFieldsMap(innerField, orm, baseOrm, ormFieldsMap);
-		});
+	builder.offset(offset);
+	if (limit != null) {
+		builder.limit(limit);
 	}
 }
 
-function upsertOrmFieldsMap(field: Field<any, any>, orm: Orm, ormFieldsMap: OrmFieldsMap): boolean {
-	let set: Set<Field<any, any>> | undefined = ormFieldsMap.get(orm),
-		insert: boolean = (set == null);
-	if (insert) {
-		set = new Set();
-		ormFieldsMap.set(orm, set);
-	}
-	set.add(field);
-	return insert;
+function getJoinOrms(orm: Orm, relatedOrms: Orm[]): Orm[] {
+	return relatedOrms.filter((relatedOrm) => {
+		let relatedOrmProperties: OrmProperties = Orm.getProperties(relatedOrm);
+		return relatedOrmProperties.base === orm && relatedOrmProperties.join != null;
+	});
 }
 
-function getDefaultFields(field: JoinManyField<any, any> | CompositeField | Orm): Set<Field<any, any>> {
+function getDefaultFields(field: JoinManyField<Orm, Orm> | CompositeField | Orm): OrmFields {
+	let properties: OrmProperties | CompositeProperties;
 	if (field instanceof JoinManyField) {
-		return Orm.getProperties(field.orm).defaultFields;
+		properties = Orm.getProperties(field.orm);
 	} else if (field instanceof Orm) {
-		return Orm.getProperties(field).defaultFields;
+		properties = Orm.getProperties(field);
 	} else {
-		return CompositeField.getProperties(field).defaultFields;
+		properties = CompositeField.getProperties(field);
 	}
+	return properties.defaultFields;
+}
+
+function getBase(orm: Orm): Orm {
+	return Orm.getProperties(orm).base;
 }
