@@ -7,6 +7,9 @@
     "type": "git",
     "url": "https://github.com/lchemy/orm.git"
   },
+  "engines": {
+    "node": ">=6"
+  },
   "scripts": {
     "build": "tsc -p ./tsconfig.build.json",
     "clean": "del-cli ./.nyc_output ./coverage ./dist ./test-tmp",
