@@ -176,57 +176,57 @@ describe("find queries", () => {
 		});
 	});
 
-	it("should find states by ids", () => {
-		let stateIds: number[] = data.states.filter(() => Math.random() > .25).map((state) => state.id);
+	it("should find cities by ids", () => {
+		let cityIds: number[] = data.cities.filter(() => Math.random() > .25).map((city) => city.id);
 
-		return findByIds<StateOrm>("states", stateIds).then((states: State[]) => {
-			expect(states.length).to.eq(stateIds.length);
-			states.forEach((state) => {
-				expect(state.id).to.be.oneOf(stateIds);
+		return findByIds<CityOrm>("cities", cityIds).then((cities: city[]) => {
+			expect(cities.length).to.eq(cityIds.length);
+			cities.forEach((city) => {
+				expect(city.id).to.be.oneOf(cityIds);
 			});
 		});
 	});
 
-	it("should find states by ids with specific fields", () => {
-		let stateIds: number[] = data.states.filter(() => Math.random() > .25).map((state) => state.id);
+	it("should find cities by ids with specific fields", () => {
+		let cityIds: number[] = data.cities.filter(() => Math.random() > .25).map((city) => city.id);
 
-		return findByIds<StateOrm>("states", stateIds, (state) => {
+		return findByIds<CityOrm>("cities", cityIds, (city) => {
 			return [
-				state.id,
-				state.name
+				city.id,
+				city.name
 			];
-		}).then((states: State[]) => {
-			expect(states.length).to.eq(stateIds.length);
-			states.forEach((state) => {
-				expect(Object.keys(state)).to.have.members(["id", "name"]);
+		}).then((cities: City[]) => {
+			expect(cities.length).to.eq(cityIds.length);
+			cities.forEach((city) => {
+				expect(Object.keys(city)).to.have.members(["id", "name"]);
 			});
 		});
 	});
 
-	it("should find states by id", () => {
-		let stateId: number = data.states.sort(() => Math.random() > .25 ? 1 : -1)[0].id;
+	it("should find cities by id", () => {
+		let cityId: number = data.cities.sort(() => Math.random() > .25 ? 1 : -1)[0].id;
 
-		return findById<StateOrm>("states", stateId).then((state: State) => {
-			expect(state.id).to.eq(stateId);
+		return findById<CityOrm>("cities", cityId).then((city: City) => {
+			expect(city.id).to.eq(cityId);
 		});
 	});
 
-	it("should find state by id with specific fields", () => {
-		let stateId: number = data.states.sort(() => Math.random() > .25 ? 1 : -1)[0].id;
+	it("should find city by id with specific fields", () => {
+		let cityId: number = data.cities.sort(() => Math.random() > .25 ? 1 : -1)[0].id;
 
-		return findById<StateOrm>("states", stateId, (state) => {
+		return findById<CityOrm>("cities", cityId, (city) => {
 			return [
-				state.id,
-				state.name
+				city.id,
+				city.name
 			];
-		}).then((state: State) => {
-			expect(state.id).to.eq(stateId);
-			expect(Object.keys(state)).to.have.members(["id", "name"]);
+		}).then((city: City) => {
+			expect(city.id).to.eq(cityId);
+			expect(Object.keys(city)).to.have.members(["id", "name"]);
 		});
 	});
 
-	it("should reject and not find state by id that doesn't exist", () => {
-		return findById<StateOrm>("states", 0).then(() => {
+	it("should reject and not find city by id that doesn't exist", () => {
+		return findById<CityOrm>("cities", 0).then(() => {
 			expect.fail("should not be resolved");
 		}).then(() => {
 			expect.fail("should not be resolved");

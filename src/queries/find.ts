@@ -124,6 +124,9 @@ export function findByIds<O extends Orm, M, A>(
 		return executeFind(orm, {
 			fields: builder != null ? builder(orm) : undefined,
 			filter: Orm.getProperties(orm).primaryKey!.in(...ids),
+			pagination: {
+				limit: null
+			},
 			auth: auth
 		}, trx);
 	});
