@@ -1,6 +1,6 @@
 {
   "name": "@lchemy/orm",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "",
   "author": "Jesse Zhang (http://jessezhang.me/)",
   "repository": {
@@ -21,6 +21,7 @@
     "posttest": "del-cli ./test-tmp",
     "prebuild": "del-cli ./dist && npm run test && npm run lint",
     "precoverage": "del-cli ./coverage",
+    "preinstall": "npm prune",
     "pretest": "del-cli ./test-tmp && tsc -p ./tsconfig.test.json",
     "test": "mocha --ui bdd --require ./test-tmp/test/bootstrap \"./test-tmp/test/**/*.spec.js\""
   },

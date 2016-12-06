@@ -18,7 +18,9 @@ const OPERATOR_SYMBOL_MAP: { [operator: number]: string } = {
 	[FilterOperator.IN]:			"in",
 	[FilterOperator.NOT_IN]:		"not in",
 	[FilterOperator.IS_NULL]:		"is null",
-	[FilterOperator.IS_NOT_NULL]:	"is not null"
+	[FilterOperator.IS_NOT_NULL]:	"is not null",
+	[FilterOperator.EXISTS]:		"exists",
+	[FilterOperator.NOT_EXISTS]:	"not exists"
 };
 const GROUPING_SYMBOL_MAP: { [grouping: number]: string } = {
 	[FilterGrouping.AND]:           "and",
@@ -66,8 +68,12 @@ export abstract class OpFilterNode<T, U> extends FilterNode {
 
 	toString(): string {
 		let field: string = this.field.toString(),
-			operator: string = OPERATOR_SYMBOL_MAP[this.operator],
-			value: string;
+			operator: string = OPERATOR_SYMBOL_MAP[this.operator];
+		if (this.value == null) {
+			return `${ field } ${ operator }`;
+		}
+
+		let value: string;
 		if (Array.isArray(this.value)) {
 			value = this.value.map(filterValueToString).join(", ");
 		} else {
@@ -116,13 +122,13 @@ export abstract class JoinManyFilterNode<J extends Orm, F extends Orm> extends F
 
 	toString(): string {
 		let field: string = this.field.toString(),
-			operator: string = OPERATOR_SYMBOL_MAP[this.operator],
-			value: string | undefined = this.value != null ? this.value.toString() : undefined;
-		if (value == null) {
+			operator: string = OPERATOR_SYMBOL_MAP[this.operator];
+		if (this.value == null) {
 			return `${ field } ${ operator }`;
-		} else {
-			return `${ field } ${ operator } ${ value }`;
 		}
+
+		let value: string | undefined = this.value.toString();
+		return `${ field } ${ operator } ${ value }`;
 	}
 }
 
