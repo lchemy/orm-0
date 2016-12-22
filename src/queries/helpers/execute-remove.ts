@@ -84,7 +84,5 @@ function executeRawRemove(table: string, filter: Filter, trx?: Knex.Transaction)
 	}
 	attachFilter(deleteQuery, filter, AttachFilterMode.WHERE);
 
-	return deleteQuery.then((res) => res).then((res) => {
-		return res[0].affectedRows;
-	}) as any as Promise<number>;
+	return deleteQuery.then((res) => res) as any as Promise<number>;
 }
