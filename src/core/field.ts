@@ -1,8 +1,8 @@
 import { FieldExclusion, FieldType } from "./enums";
 import {
-	BetweenFilterNode, EqualFilterNode, GreaterThanEqualFilterNode, GreaterThanFilterNode, InFilterNode,
-	IsNotNullFilterNode, IsNullFilterNode, LessThanEqualFilterNode, LessThanFilterNode, LikeFilterNode,
-	NotBetweenFilterNode, NotEqualFilterNode, NotInFilterNode, NotLikeFilterNode
+	BetweenFilterNode, EqualFilterNode, FieldValue, GreaterThanEqualFilterNode, GreaterThanFilterNode,
+	InFilterNode, IsNotNullFilterNode, IsNullFilterNode, LessThanEqualFilterNode, LessThanFilterNode,
+	LikeFilterNode, NotBetweenFilterNode, NotEqualFilterNode, NotInFilterNode, NotLikeFilterNode
 } from "./filter";
 import { Orm } from "./orm";
 
@@ -43,17 +43,17 @@ export abstract class Field<O extends Orm, T> {
 		return Orm.getProperties(this.orm).anonymous;
 	}
 
-	eq(value: T | Field<any, T>): EqualFilterNode<T> {
+	eq(value: FieldValue<T>): EqualFilterNode<T> {
 		return new EqualFilterNode(this, value);
 	}
-	neq(value: T | Field<any, T>): NotEqualFilterNode<T> {
+	neq(value: FieldValue<T>): NotEqualFilterNode<T> {
 		return new NotEqualFilterNode(this, value);
 	}
 
-	in(...values: Array<T | Field<any, T>>): InFilterNode<T> {
+	in(...values: Array<FieldValue<T>>): InFilterNode<T> {
 		return new InFilterNode(this, values);
 	}
-	notIn(...values: Array<T | Field<any, T>>): NotInFilterNode<T> {
+	notIn(...values: Array<FieldValue<T>>): NotInFilterNode<T> {
 		return new NotInFilterNode(this, values);
 	}
 
@@ -70,34 +70,34 @@ export abstract class Field<O extends Orm, T> {
 }
 
 export abstract class ComparableField<O, T> extends Field<O, T> {
-	gt(value: T | Field<any, T>): GreaterThanFilterNode<T> {
+	gt(value: FieldValue<T>): GreaterThanFilterNode<T> {
 		return new GreaterThanFilterNode(this, value);
 	}
-	gte(value: T | Field<any, T>): GreaterThanEqualFilterNode<T> {
+	gte(value: FieldValue<T>): GreaterThanEqualFilterNode<T> {
 		return new GreaterThanEqualFilterNode(this, value);
 	}
-	lt(value: T | Field<any, T>): LessThanFilterNode<T> {
+	lt(value: FieldValue<T>): LessThanFilterNode<T> {
 		return new LessThanFilterNode(this, value);
 	}
-	lte(value: T | Field<any, T>): LessThanEqualFilterNode<T> {
+	lte(value: FieldValue<T>): LessThanEqualFilterNode<T> {
 		return new LessThanEqualFilterNode(this, value);
 	}
 }
 
 export abstract class RangeField<O, T> extends ComparableField<O, T> {
-	between(min: T | Field<any, T>, max: T | Field<any, T>): BetweenFilterNode<T> {
+	between(min: FieldValue<T>, max: FieldValue<T>): BetweenFilterNode<T> {
 		return new BetweenFilterNode(this, [min, max]);
 	}
-	notBetween(min: T | Field<any, T>, max: T | Field<any, T>): NotBetweenFilterNode<T> {
+	notBetween(min: FieldValue<T>, max: FieldValue<T>): NotBetweenFilterNode<T> {
 		return new NotBetweenFilterNode(this, [min, max]);
 	}
 }
 
 export abstract class LikeField<O, T> extends ComparableField<O, T> {
-	like(value: T | Field<any, T>): LikeFilterNode<T> {
+	like(value: FieldValue<T>): LikeFilterNode<T> {
 		return new LikeFilterNode(this, value);
 	}
-	notLike(value: T | Field<any, T>): NotLikeFilterNode<T> {
+	notLike(value: FieldValue<T>): NotLikeFilterNode<T> {
 		return new NotLikeFilterNode(this, value);
 	}
 }

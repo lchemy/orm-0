@@ -6,6 +6,7 @@ export * from "./get-object-at-path";
 export * from "./get-orm";
 export * from "./hydrate-filter";
 export * from "./merge-result-sets";
+export * from "./model-like";
 export * from "./normalize-sort-direction";
 export * from "./test-filter";
 export * from "./unflatten";

@@ -17,7 +17,7 @@ export class DeferredMap<K, V> {
 			return deferred.promise;
 		}
 
-		let resolve: ((value: V | Promise<V>) => void) | undefined = undefined;
+		let resolve: ((value: V | Promise<V>) => void) | undefined;
 		let promise: Promise<V> = new Promise((r) => {
 			resolve = r;
 		});
@@ -82,5 +82,9 @@ export class DeferredMap<K, V> {
 				});
 			});
 		});
+	}
+
+	clear(): void {
+		this.map.clear();
 	}
 }

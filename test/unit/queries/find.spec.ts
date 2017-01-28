@@ -231,6 +231,30 @@ describe("find queries", () => {
 		});
 	});
 
+	it("should find city by raw values", () => {
+		return findAll<CityOrm>("cities", (city) => {
+			return {
+				fields: [
+					city.id,
+					city.name
+				],
+				filter: city.name.gte(knex.raw("'e'")),
+				pagination: {
+					limit: null
+				}
+			};
+		}).then((cities: City[]) => {
+			let expectedCount: number = data.cities.filter((city) => {
+				return city.name > "e";
+			}).length;
+			expect(cities.length).to.eq(expectedCount);
+
+			cities.forEach((city) => {
+				expect(city.name > "e").to.be.true;
+			});
+		});
+	});
+
 	it("should reject and not find city by id that doesn't exist", () => {
 		return findById<CityOrm>("cities", 0).then(() => {
 			expect.fail("should not be resolved");

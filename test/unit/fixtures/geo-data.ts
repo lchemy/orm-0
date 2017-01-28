@@ -105,14 +105,15 @@ export interface CountriesLanguagesJoinOrm extends Orm {
 	languageId: field.Numerical;
 }
 
-export type Definitions = {
-	continentOrm: ContinentOrm,
-	countryOrm: CountryOrm,
-	stateOrm: StateOrm,
-	cityOrm: CityOrm,
-	languageOrm: LanguageOrm,
-	countriesLanguagesJoinOrm: CountriesLanguagesJoinOrm
-};
+export interface Definitions {
+	continentOrm: ContinentOrm;
+	countryOrm: CountryOrm;
+	stateOrm: StateOrm;
+	cityOrm: CityOrm;
+	languageOrm: LanguageOrm;
+	countriesLanguagesJoinOrm: CountriesLanguagesJoinOrm;
+}
+
 export const definitions: Promise<Definitions> = Promise.all([
 	define<ContinentOrm, AuthUser>({
 		ref: "continents",
@@ -333,14 +334,15 @@ export function deleteTables(): Promise<any> {
 	]);
 }
 
-export type Data = {
-	continents: Continent[],
-	countries: Country[],
-	states: State[],
-	cities: City[],
-	languages: Language[],
-	countriesLanguagesJoins: CountriesLanguagesJoin[]
-};
+export interface Data {
+	continents: Continent[];
+	countries: Country[];
+	states: State[];
+	cities: City[];
+	languages: Language[];
+	countriesLanguagesJoins: CountriesLanguagesJoin[];
+}
+
 export function mockData(): Promise<Data> {
 	let continentsPromise: Promise<Continent[]> = Array(6).fill(undefined).reduce((p) => {
 		return p.then(() => {

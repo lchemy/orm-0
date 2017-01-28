@@ -9,7 +9,11 @@ import { unflatten } from "./unflatten";
 
 export type FindQueryField = Field<any, any> | CompositeField | JoinManyField<any, any> | Orm;
 export type FindSortField = Field<any, any> | { field: Field<any, any>, direction?: SortDirection };
-export type FindPagination = { offset?: number, limit?: number | null };
+
+export interface FindPagination {
+	offset?: number;
+	limit?: number | null;
+}
 
 export interface FindQuery {
 	count?: boolean;

@@ -93,6 +93,9 @@
 				"named-imports-order": "lowercase-last"
 			}
 		],
+		"prefer-const": [
+			false
+		],
 		"quotemark": [
 			true,
 			"double",
@@ -102,6 +105,14 @@
 		"semicolon": [
 			true,
 			"always"
+		],
+		"space-before-function-paren": [
+			true,
+			{
+				"anonymous": "always",
+				"named": "never",
+				"asyncArrow": "always"
+			}
 		],
 		"switch-default": true,
 		"trailing-comma": [

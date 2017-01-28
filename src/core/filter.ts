@@ -1,3 +1,5 @@
+import * as Knex from "knex";
+
 import { FilterGrouping, FilterOperator } from "./enums";
 import { Field } from "./field";
 import { JoinManyField } from "./join-many-field";
@@ -161,85 +163,86 @@ export abstract class FilterGroup {
 }
 
 export type Filter = FilterNode | FilterGroup;
+export type FieldValue<T> = T | Field<any, T> | Knex.Raw;
 
-export class EqualFilterNode<T> extends OpFilterNode<T, T | Field<any, T>> {
+export class EqualFilterNode<T> extends OpFilterNode<T, FieldValue<T>> {
 	operator: FilterOperator = FilterOperator.EQ;
 
 	clone(): EqualFilterNode<T> {
 		return new EqualFilterNode(this.field, this.value);
 	}
 }
-export class NotEqualFilterNode<T> extends OpFilterNode<T, T | Field<any, T>> {
+export class NotEqualFilterNode<T> extends OpFilterNode<T, FieldValue<T>> {
 	operator: FilterOperator = FilterOperator.NEQ;
 
 	clone(): NotEqualFilterNode<T> {
 		return new NotEqualFilterNode(this.field, this.value);
 	}
 }
-export class GreaterThanFilterNode<T> extends OpFilterNode<T, T | Field<any, T>> {
+export class GreaterThanFilterNode<T> extends OpFilterNode<T, FieldValue<T>> {
 	operator: FilterOperator = FilterOperator.GT;
 
 	clone(): GreaterThanFilterNode<T> {
 		return new GreaterThanFilterNode(this.field, this.value);
 	}
 }
-export class GreaterThanEqualFilterNode<T> extends OpFilterNode<T, T | Field<any, T>> {
+export class GreaterThanEqualFilterNode<T> extends OpFilterNode<T, FieldValue<T>> {
 	operator: FilterOperator = FilterOperator.GTE;
 
 	clone(): GreaterThanEqualFilterNode<T> {
 		return new GreaterThanEqualFilterNode(this.field, this.value);
 	}
 }
-export class LessThanFilterNode<T> extends OpFilterNode<T, T | Field<any, T>> {
+export class LessThanFilterNode<T> extends OpFilterNode<T, FieldValue<T>> {
 	operator: FilterOperator = FilterOperator.LT;
 
 	clone(): LessThanFilterNode<T> {
 		return new LessThanFilterNode(this.field, this.value);
 	}
 }
-export class LessThanEqualFilterNode<T> extends OpFilterNode<T, T | Field<any, T>> {
+export class LessThanEqualFilterNode<T> extends OpFilterNode<T, FieldValue<T>> {
 	operator: FilterOperator = FilterOperator.LTE;
 
 	clone(): LessThanEqualFilterNode<T> {
 		return new LessThanEqualFilterNode(this.field, this.value);
 	}
 }
-export class LikeFilterNode<T> extends OpFilterNode<T, T | Field<any, T>> {
+export class LikeFilterNode<T> extends OpFilterNode<T, FieldValue<T>> {
 	operator: FilterOperator = FilterOperator.LIKE;
 
 	clone(): LikeFilterNode<T> {
 		return new LikeFilterNode(this.field, this.value);
 	}
 }
-export class NotLikeFilterNode<T> extends OpFilterNode<T, T | Field<any, T>> {
+export class NotLikeFilterNode<T> extends OpFilterNode<T, FieldValue<T>> {
 	operator: FilterOperator = FilterOperator.NOT_LIKE;
 
 	clone(): NotLikeFilterNode<T> {
 		return new NotLikeFilterNode(this.field, this.value);
 	}
 }
-export class BetweenFilterNode<T> extends OpFilterNode<T, [T | Field<any, T>, T | Field<any, T>]> {
+export class BetweenFilterNode<T> extends OpFilterNode<T, [FieldValue<T>, FieldValue<T>]> {
 	operator: FilterOperator = FilterOperator.BETWEEN;
 
 	clone(): BetweenFilterNode<T> {
 		return new BetweenFilterNode(this.field, this.value);
 	}
 }
-export class NotBetweenFilterNode<T> extends OpFilterNode<T, [T | Field<any, T>, T | Field<any, T>]> {
+export class NotBetweenFilterNode<T> extends OpFilterNode<T, [FieldValue<T>, FieldValue<T>]> {
 	operator: FilterOperator = FilterOperator.NOT_BETWEEN;
 
 	clone(): NotBetweenFilterNode<T> {
 		return new NotBetweenFilterNode(this.field, this.value);
 	}
 }
-export class InFilterNode<T> extends OpFilterNode<T, Array<T | Field<any, T>>> {
+export class InFilterNode<T> extends OpFilterNode<T, Array<FieldValue<T>>> {
 	operator: FilterOperator = FilterOperator.IN;
 
 	clone(): InFilterNode<T> {
 		return new InFilterNode(this.field, this.value);
 	}
 }
-export class NotInFilterNode<T> extends OpFilterNode<T, Array<T | Field<any, T>>> {
+export class NotInFilterNode<T> extends OpFilterNode<T, Array<FieldValue<T>>> {
 	operator: FilterOperator = FilterOperator.NOT_IN;
 
 	clone(): NotInFilterNode<T> {

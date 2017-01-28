@@ -2,11 +2,26 @@ import * as Knex from "knex";
 
 import { knex } from "../config/knex";
 import { Field, Orm } from "../core";
-import { getOrm, withTransaction } from "./helpers";
+import { ModelLike, getOrm, withTransaction } from "./helpers";
 
-export function insert<O extends Orm>(ref: string | symbol | O, builder: (orm: O) => Array<Field<O, any>>, models: Object[], trx?: Knex.Transaction): Promise<number[]>;
-export function insert<O extends Orm, M>(ref: string | symbol | O, builder: (orm: O) => Array<Field<O, any>>, models: M[], trx?: Knex.Transaction): Promise<number[]>;
-export function insert<O extends Orm, M>(ref: string | symbol | O, builder: (orm: O) => Array<Field<O, any>>, models: M[], trx?: Knex.Transaction): Promise<number[]> {
+export function insert<O extends Orm>(
+	ref: string | symbol | O,
+	builder: (orm: O) => Array<Field<O, any>>,
+	models: Object[],
+	trx?: Knex.Transaction
+): Promise<number[]>;
+export function insert<O extends Orm, M>(
+	ref: string | symbol | O,
+	builder: (orm: O) => Array<Field<O, any>>,
+	models: Array<ModelLike<M>>,
+	trx?: Knex.Transaction
+): Promise<number[]>;
+export function insert<O extends Orm, M>(
+	ref: string | symbol | O,
+	builder: (orm: O) => Array<Field<O, any>>,
+	models: Array<ModelLike<M>>,
+	trx?: Knex.Transaction
+): Promise<number[]> {
 	if (models.length === 0) {
 		return Promise.resolve([]);
 	}
@@ -18,7 +33,7 @@ export function insert<O extends Orm, M>(ref: string | symbol | O, builder: (orm
 		// TODO: validations and etc.
 		let data: Object[] = models.map((model) =>
 			fields.reduce((memo, field) => {
-				memo[field.column] = field.mapper(model);
+				memo[field.column] = field.mapper(model as Object);
 				return memo;
 			}, {})
 		);
@@ -42,8 +57,23 @@ export function insert<O extends Orm, M>(ref: string | symbol | O, builder: (orm
 	});
 }
 
-export function insertOne<O extends Orm>(ref: string | symbol | O, builder: (orm: O) => Array<Field<O, any>>, model: Object, trx?: Knex.Transaction): Promise<number>;
-export function insertOne<O extends Orm, M>(ref: string | symbol | O, builder: (orm: O) => Array<Field<O, any>>, model: M, trx?: Knex.Transaction): Promise<number>;
-export function insertOne<O extends Orm, M>(ref: string | symbol | O, builder: (orm: O) => Array<Field<O, any>>, model: M, trx?: Knex.Transaction): Promise<number> {
+export function insertOne<O extends Orm>(
+	ref: string | symbol | O,
+	builder: (orm: O) => Array<Field<O, any>>,
+	model: Object,
+	trx?: Knex.Transaction
+): Promise<number>;
+export function insertOne<O extends Orm, M>(
+	ref: string | symbol | O,
+	builder: (orm: O) => Array<Field<O, any>>,
+	model: ModelLike<M>,
+	trx?: Knex.Transaction
+): Promise<number>;
+export function insertOne<O extends Orm, M>(
+	ref: string | symbol | O,
+	builder: (orm: O) => Array<Field<O, any>>,
+	model: ModelLike<M>,
+	trx?: Knex.Transaction
+): Promise<number> {
 	return insert(ref, builder, [model], trx).then((res) => res[0]);
 }

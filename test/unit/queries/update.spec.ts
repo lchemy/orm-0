@@ -4,6 +4,7 @@ import * as sinon from "sinon";
 
 import { findAll } from "../../../src/queries/find";
 import { update, updateModel, updateModels } from "../../../src/queries/update";
+import { knex } from "../fixtures/knex";
 
 import {
 	City, CityOrm, Continent, ContinentOrm, Country, CountryOrm, Data, Language, LanguageOrm, State, StateOrm,
@@ -141,6 +142,36 @@ describe("update queries", () => {
 		}, (err) => {
 			sandbox.restore();
 			throw err;
+		});
+	});
+
+	it("should update with raw", () => {
+		return update<CityOrm>("cities", (city) => {
+			return {
+				fields: [
+					city.name
+				],
+				filter: city.name.gt(knex.raw("'c'"))
+			};
+		}, {
+			name: knex.raw("'new city name'")
+		}).then((count) => {
+			let expectedCities: City[] = data.cities.filter((city) => city.name > "c");
+			expect(count).to.eq(expectedCities.length);
+
+			let updatedCityIds: number[] = expectedCities.map((city) => city.id);
+			return findAll<CityOrm>("cities", (city) => {
+				return {
+					fields: [
+						city.name
+					],
+					filter: city.id.in(...updatedCityIds)
+				};
+			});
+		}).then((cities: City[]) => {
+			cities.forEach((city) => {
+				expect(city.name).to.eq("new city name");
+			});
 		});
 	});
 

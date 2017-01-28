@@ -16,11 +16,12 @@ function mergeResultSet(baseSet: Object[], container: JoinResultContainer): void
 	});
 }
 
-export type JoinResultContainer = {
-	results: Object[],
-	orm: Orm,
-	where: Filter
-};
+export interface JoinResultContainer {
+	results: Object[];
+	orm: Orm;
+	where: Filter;
+}
+
 export function mergeResultSets(baseResults: Object[], containers: JoinResultContainer[]): Object[] {
 	containers.forEach((container) => mergeResultSet(baseResults, container));
 	return baseResults;

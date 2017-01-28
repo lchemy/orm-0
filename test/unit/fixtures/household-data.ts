@@ -29,11 +29,12 @@ export interface AuthUser {
 	allowedPersonIds?: number[];
 }
 
-type Definitions = {
-	personOrm: PersonOrm,
-	petOrm: PetOrm,
-	peoplePetsJoinOrm: PeoplePetsJoinOrm
-};
+export interface Definitions {
+	personOrm: PersonOrm;
+	petOrm: PetOrm;
+	peoplePetsJoinOrm: PeoplePetsJoinOrm;
+}
+
 export const definitions: Promise<Definitions> = Promise.all([
 	define<PersonOrm, AuthUser>("people", (field, join) => {
 		return {
