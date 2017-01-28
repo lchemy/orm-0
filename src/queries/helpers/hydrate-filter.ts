@@ -37,8 +37,12 @@ export function hydrateFilterGroup(filter: FilterGroup, orm: Orm, results: Objec
 }
 
 export function hydrateOpFilterNode(filter: OpFilterNode<any, any>, orm: Orm, results: Object[]): Filter {
-	// TODO: find a better way to do the filter.field
+	if (filter.operator === FilterOperator.IS_NULL || filter.operator === FilterOperator.IS_NOT_NULL) {
+		// if filter is a null/not null check, nothing to hydrate
+		return filter;
+	}
 
+	// TODO: find a better way to do the filter.field
 	let filterField: Field<any, any> | any[] = hydrateField(filter.field, orm, results);
 
 	let filterValueMapper: (value: any) => any = (value) => {
@@ -129,12 +133,6 @@ export function hydrateOpFilterNode(filter: OpFilterNode<any, any>, orm: Orm, re
 			// TODO: implement
 			throw new Error("Unimplemented");
 		case FilterOperator.NOT_IN:
-			// TODO: implement
-			throw new Error("Unimplemented");
-		case FilterOperator.IS_NULL:
-			// TODO: implement
-			throw new Error("Unimplemented");
-		case FilterOperator.IS_NOT_NULL:
 			// TODO: implement
 			throw new Error("Unimplemented");
 		default:
