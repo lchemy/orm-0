@@ -294,11 +294,7 @@ export class AndFilterGroup extends FilterGroup {
 	grouping: FilterGrouping = FilterGrouping.AND;
 
 	and(...expressions: Filter[]): AndFilterGroup {
-		this.expressions.push(...expressions);
-		expressions.forEach((expression) => {
-			this.fields.push.apply(this.fields, expression.fields);
-		});
-		return this;
+		return new AndFilterGroup(this.expressions.concat(expressions));
 	}
 	or(...expressions: Filter[]): OrFilterGroup {
 		return new OrFilterGroup(expressions.concat([this]));
@@ -316,11 +312,7 @@ export class OrFilterGroup extends FilterGroup {
 		return new AndFilterGroup(expressions.concat([this]));
 	}
 	or(...expressions: Filter[]): OrFilterGroup {
-		this.expressions.push(...expressions);
-		expressions.forEach((expression) => {
-			this.fields.push.apply(this.fields, expression.fields);
-		});
-		return this;
+		return new OrFilterGroup(this.expressions.concat(expressions));
 	}
 
 	clone(): OrFilterGroup {
