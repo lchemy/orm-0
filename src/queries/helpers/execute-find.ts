@@ -1,9 +1,9 @@
 import * as Knex from "knex";
 
 import { knex } from "../../config/knex";
-import { CompositeField, CompositeProperties, Field, Filter, JoinManyField, Orm, OrmJoinOn, OrmProperties, SortDirection } from "../../core";
+import { CompositeField, CompositeProperties, Field, Filter, JoinManyField, Orm, OrmJoinOn, OrmProperties, SortDirection, isFilter } from "../../core";
 import { AttachFilterMode, attachFilter } from "./attach-filter";
-import { hydrateFilter } from "./hydrate-filter";
+import { HydrationResult, hydrateFilter } from "./hydrate-filter";
 import { JoinResultContainer, mergeResultSets } from "./merge-result-sets";
 import { unflatten } from "./unflatten";
 
@@ -260,9 +260,21 @@ function executeNodeChildren(node: ExecutionTreeNode, baseResults: Object[], trx
 
 		// get join filter
 		let joinFilter: Filter = Orm.getProperties(joinNode.orm).join!.on,
-			hydratedJoinFilter: Filter = hydrateFilter(joinFilter, node.orm, baseResults);
+			hydratedJoinExpression: Filter | HydrationResult = hydrateFilter(joinFilter, node.orm, baseResults);
 
-		joinNode.filter = joinNode.filter != null ? hydratedJoinFilter.and(joinNode.filter) : hydratedJoinFilter;
+		// if hydration result is fail, just stop execution now
+		if (hydratedJoinExpression === HydrationResult.FAIL) {
+			return Promise.resolve({
+				results: [],
+				orm: joinNode.orm,
+				where: joinFilter
+			});
+		}
+
+		// otherwise, if it is a filter, append joinNode.filter to hydrated join expression
+		if (isFilter(hydratedJoinExpression)) {
+			joinNode.filter = joinNode.filter != null ? hydratedJoinExpression.and(joinNode.filter) : hydratedJoinExpression;
+		}
 
 		// execute join many
 		return executeNode(joinNode, {

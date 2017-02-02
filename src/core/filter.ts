@@ -294,6 +294,7 @@ export class AndFilterGroup extends FilterGroup {
 	grouping: FilterGrouping = FilterGrouping.AND;
 
 	and(...expressions: Filter[]): AndFilterGroup {
+		// TODO: can potentially improve performance by not recomputing fields
 		return new AndFilterGroup(this.expressions.concat(expressions));
 	}
 	or(...expressions: Filter[]): OrFilterGroup {
@@ -301,6 +302,7 @@ export class AndFilterGroup extends FilterGroup {
 	}
 
 	clone(): AndFilterGroup {
+		// TODO: can potentially improve performance by not recomputing fields
 		return new AndFilterGroup(this.expressions);
 	}
 }
@@ -312,10 +314,16 @@ export class OrFilterGroup extends FilterGroup {
 		return new AndFilterGroup(expressions.concat([this]));
 	}
 	or(...expressions: Filter[]): OrFilterGroup {
+		// TODO: can potentially improve performance by not recomputing fields
 		return new OrFilterGroup(this.expressions.concat(expressions));
 	}
 
 	clone(): OrFilterGroup {
+		// TODO: can potentially improve performance by not recomputing fields
 		return new OrFilterGroup(this.expressions);
 	}
+}
+
+export function isFilter(test: any): test is Filter {
+	return test instanceof FilterNode || test instanceof FilterGroup;
 }

@@ -128,7 +128,8 @@ export const definitions: Promise<Definitions> = Promise.all([
 			name: field.String("name"),
 
 			countries: join.Many<CountryOrm>("countries", false).on((country, continent) => {
-				return country.continentId.eq(continent.id);
+				// the isNotNull part is unnecessary but here to exercise hydration
+				return country.continentId.eq(continent.id).and(country.continentId.isNotNull()).and(continent.id.isNotNull());
 			}).withAuth<AuthUser>((auth, country) => {
 				if (auth.isAdmin || auth.allowedCountryIds == null) {
 					return;

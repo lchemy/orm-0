@@ -2,12 +2,17 @@ import {
 	AndFilterGroup, EqualFilterNode, Field, Filter, FilterGroup, FilterGrouping, FilterOperator,
 	GreaterThanEqualFilterNode, GreaterThanFilterNode, InFilterNode, JoinManyFilterNode, LessThanEqualFilterNode,
 	LessThanFilterNode, LikeFilterNode, NotEqualFilterNode, NotInFilterNode, NotLikeFilterNode, OpFilterNode,
-	OrFilterGroup, Orm
+	OrFilterGroup, Orm, isFilter
 } from "../../core";
 
-export function hydrateFilter(filter: Filter, orm: Orm, results: Object[]): Filter {
+export enum HydrationResult {
+	PASS,
+	FAIL
+}
+
+export function hydrateFilter(filter: Filter, orm: Orm, results: Object[]): Filter | HydrationResult {
 	let needsHydration: boolean = filter.fields.some((field) => {
-		return Orm.getProperties(field.orm).base !== orm;
+		return Orm.getProperties(field.orm).base === orm;
 	});
 	if (!needsHydration) {
 		return filter;
@@ -25,23 +30,34 @@ export function hydrateFilter(filter: Filter, orm: Orm, results: Object[]): Filt
 	}
 }
 
-export function hydrateFilterGroup(filter: FilterGroup, orm: Orm, results: Object[]): Filter {
-	let hydratedExpressions: Filter[] = filter.expressions.map((expression) => {
+export function hydrateFilterGroup(filter: FilterGroup, orm: Orm, results: Object[]): Filter | HydrationResult {
+	let hydratedExpressions: Array<Filter | HydrationResult> = filter.expressions.map((expression) => {
 		return hydrateFilter(expression, orm, results);
 	});
+
+	// check if we can simplify to a hydration result
 	if (filter.grouping === FilterGrouping.OR) {
-		return new OrFilterGroup(hydratedExpressions);
+		let alwaysPass: boolean = hydratedExpressions.some((expression) => expression === HydrationResult.PASS);
+		if (alwaysPass) {
+			return HydrationResult.PASS;
+		}
 	} else {
-		return new AndFilterGroup(hydratedExpressions);
+		let alwaysFail: boolean = hydratedExpressions.some((expression) => expression === HydrationResult.FAIL);
+		if (alwaysFail) {
+			return HydrationResult.FAIL;
+		}
+	}
+
+	// otherwise, strip out the hydration results; unnecessary
+	let hydratedFilters: Filter[] = hydratedExpressions.filter(isFilter) as Filter[];
+	if (filter.grouping === FilterGrouping.OR) {
+		return new OrFilterGroup(hydratedFilters);
+	} else {
+		return new AndFilterGroup(hydratedFilters);
 	}
 }
 
-export function hydrateOpFilterNode(filter: OpFilterNode<any, any>, orm: Orm, results: Object[]): Filter {
-	if (filter.operator === FilterOperator.IS_NULL || filter.operator === FilterOperator.IS_NOT_NULL) {
-		// if filter is a null/not null check, nothing to hydrate
-		return filter;
-	}
-
+export function hydrateOpFilterNode(filter: OpFilterNode<any, any>, orm: Orm, results: Object[]): Filter | HydrationResult {
 	// TODO: find a better way to do the filter.field
 	let filterField: Field<any, any> | any[] = hydrateField(filter.field, orm, results);
 
@@ -54,6 +70,7 @@ export function hydrateOpFilterNode(filter: OpFilterNode<any, any>, orm: Orm, re
 	let filterValue: Field<any, any> | any[] = Array.isArray(filter.value) ? filter.value.map(filterValueMapper) : filterValueMapper(filter.value);
 
 	// TODO: dedupe values?
+	// TODO: implement HydrationResult for more operators
 	switch (filter.operator) {
 		case FilterOperator.EQ:
 			if (filterField instanceof Field) {
@@ -135,13 +152,19 @@ export function hydrateOpFilterNode(filter: OpFilterNode<any, any>, orm: Orm, re
 		case FilterOperator.NOT_IN:
 			// TODO: implement
 			throw new Error("Unimplemented");
+		case FilterOperator.IS_NULL:
+			let hasNull: boolean = (filterField as any[]).some((value) => value == null);
+			return hasNull ? HydrationResult.PASS : HydrationResult.FAIL;
+		case FilterOperator.IS_NOT_NULL:
+			let hasNotNull: boolean = (filterField as any[]).some((value) => value != null);
+			return hasNotNull ? HydrationResult.PASS : HydrationResult.FAIL;
 		default:
 			// TODO: error
 			throw new Error(`Invalid filter type for operator hydration: ${ filter.operator }, ${ FilterOperator[filter.operator] }`);
 	}
 }
 
-export function hydrateJoinManyFilterNode(filter: JoinManyFilterNode<any, any>, orm: Orm, results: Object[]): Filter {
+export function hydrateJoinManyFilterNode(filter: JoinManyFilterNode<any, any>, orm: Orm, results: Object[]): Filter | HydrationResult {
 	// tslint:disable-next-line
 	filter; orm; results;
 
