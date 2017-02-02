@@ -30,12 +30,13 @@ type OrmFields = Set<OrmField>;
 interface QueryData {
 	fieldsMap: Map<Orm, OrmFields>;
 	filterMap: Map<Orm, Filter>;
-	relatedOrms: Orm[];
+	relatedOrms: Set<Orm>;
+	selectedOrms: Set<Orm>;
 }
 interface ExecutionTreeNode {
 	children: ExecutionTreeNode[];
 	orm: Orm;
-	joinOrms: Orm[];
+	joinOrms: Set<Orm>;
 	fields: OrmFields;
 	filter?: Filter;
 }
@@ -61,7 +62,7 @@ function buildExecutionTree(orm: Orm, query: FindQuery): ExecutionTreeNode {
 		return createTreeNode(orm, data);
 	}
 
-	let baseOrms: Orm[] = Array.from(new Set<Orm>(data.relatedOrms.map(getBase))),
+	let baseOrms: Set<Orm> = new Set<Orm>(Array.from(data.selectedOrms).map(getBase)),
 		baseOrmsNodeMap: Map<Orm, ExecutionTreeNode> = new Map<Orm, ExecutionTreeNode>();
 
 	baseOrms.forEach((baseOrm) => {
@@ -93,7 +94,8 @@ function getQueryData(orm: Orm, query: FindQuery): QueryData {
 	let data: QueryData = {
 		fieldsMap: new Map<Orm, OrmFields>(),
 		filterMap: new Map<Orm, Filter>(),
-		relatedOrms: []
+		relatedOrms: new Set<Orm>(),
+		selectedOrms: new Set<Orm>()
 	};
 
 	data = addRelatedOrm(orm, query, data);
@@ -110,10 +112,10 @@ function getQueryData(orm: Orm, query: FindQuery): QueryData {
 		}
 		queryFields.forEach((field) => {
 			if (field instanceof Field) {
-				data = addField(field, query, data);
+				data = addSelectedField(field, query, data);
 			} else {
 				getDefaultFields(field).forEach((f) => {
-					data = addField(f, query, data);
+					data = addSelectedField(f, query, data);
 				});
 			}
 		});
@@ -124,7 +126,7 @@ function getQueryData(orm: Orm, query: FindQuery): QueryData {
 
 function addRelatedOrm(relatedOrm: Orm, query: FindQuery, data: QueryData): QueryData {
 	let relatedOrmProperties: OrmProperties = Orm.getProperties(relatedOrm);
-	if (data.relatedOrms.indexOf(relatedOrm) >= 0) {
+	if (data.relatedOrms.has(relatedOrm)) {
 		return data;
 	}
 
@@ -132,7 +134,7 @@ function addRelatedOrm(relatedOrm: Orm, query: FindQuery, data: QueryData): Quer
 	if (relatedOrmProperties.parent != null) {
 		data = addRelatedOrm(relatedOrmProperties.parent, query, data);
 	}
-	data.relatedOrms.push(relatedOrm);
+	data.relatedOrms.add(relatedOrm);
 
 	// if auth is available, add auth filter
 	if (relatedOrmProperties.auth != null && query.auth != null) {
@@ -172,6 +174,11 @@ function addField(field: OrmField, query: FindQuery, data: QueryData): QueryData
 	data = addRelatedOrm(field.orm, query, data);
 
 	return data;
+}
+
+function addSelectedField(field: OrmField, query: FindQuery, data: QueryData): QueryData {
+	data.selectedOrms.add(field.orm);
+	return addField(field, query, data);
 }
 
 function addFilter(orm: Orm, newFilter: Filter, query: FindQuery, data: QueryData): QueryData {
@@ -341,11 +348,11 @@ function attachPagination(builder: Knex.QueryBuilder, pagination?: FindPaginatio
 	}
 }
 
-function getJoinOrms(orm: Orm, relatedOrms: Orm[]): Orm[] {
-	return relatedOrms.filter((relatedOrm) => {
+function getJoinOrms(orm: Orm, relatedOrms: Set<Orm>): Set<Orm> {
+	return new Set<Orm>(Array.from(relatedOrms).filter((relatedOrm) => {
 		let relatedOrmProperties: OrmProperties = Orm.getProperties(relatedOrm);
 		return relatedOrmProperties.base === orm && relatedOrmProperties.join != null;
-	});
+	}));
 }
 
 function getDefaultFields(field: JoinManyField<Orm, Orm> | CompositeField | Orm): OrmFields {

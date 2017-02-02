@@ -128,12 +128,12 @@ describe("find queries", () => {
 				fields: [
 					city.id,
 					city.name,
-					city.state.id,
-					city.state.name
+					city.parent.state.id,
+					city.parent.state.name
 				],
 				filter: city.name.gt("c"),
 				sorts: [{
-					field: city.state.id
+					field: city.parent.state.id
 				}, {
 					field: city.name,
 					direction: "desc"
@@ -151,16 +151,16 @@ describe("find queries", () => {
 			expect(cities.length).to.be.lte(25);
 			cities.forEach((city) => {
 				expect(city.name > "c").to.be.true;
-				expect(city.state.id).to.eq(idMaps.cities[city.id].state.id);
+				expect(city.parent.state.id).to.eq(idMaps.cities[city.id].parent.state.id);
 			});
 			expect(cities.every((city, i) => {
 				if (i === 0) {
 					return true;
 				}
-				if (city.state.id === cities[i - 1].state.id) {
+				if (city.parent.state.id === cities[i - 1].parent.state.id) {
 					return city.name < cities[i - 1].name;
 				}
-				return city.state.id > cities[i - 1].state.id;
+				return city.parent.state.id > cities[i - 1].parent.state.id;
 			})).to.be.true;
 		});
 	});

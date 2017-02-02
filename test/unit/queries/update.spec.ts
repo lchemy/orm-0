@@ -73,7 +73,7 @@ describe("update queries", () => {
 				fields: [
 					city.name
 				],
-				filter: city.state.country.name.gt("d")
+				filter: city.parent.state.country.name.gt("d")
 			};
 		}, {
 			name: "new city name"

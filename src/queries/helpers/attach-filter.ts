@@ -62,9 +62,11 @@ function attachFilterHelper(builder: Knex.QueryBuilder, filter: Filter, mode: At
 				throw new Error(`Invalid operator for join many: ${ filter.operator }, ${ FilterOperator[filter.operator] }`);
 		}
 
-		// TODO: andWhereExists doesn't exist in knex for some reason, report bug?
+		// TODO: andWhereExists and andWhereNotExists do not exist in knex, report bug?
 		if (fnName === "andWhereExists") {
 			fnName = "whereExists";
+		} else if (fnName === "andWhereNotExists") {
+			fnName = "whereNotExists";
 		}
 
 		return builder[fnName](translateJoinManyFilterNode(filter)) as Knex.QueryBuilder;

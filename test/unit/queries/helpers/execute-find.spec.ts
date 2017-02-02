@@ -237,7 +237,7 @@ describe("execute find", () => {
 					continentOrm.countries.orm.states.orm.countryId,
 					continentOrm.countries.orm.states.orm.cities.orm.id,
 					continentOrm.countries.orm.states.orm.cities.orm.name,
-					continentOrm.countries.orm.states.orm.cities.orm.stateId
+					continentOrm.countries.orm.states.orm.cities.orm.parent.stateId
 				]
 			}).then((continents: Continent[]) => {
 				expect(queryCount).to.eq(4);
@@ -258,8 +258,8 @@ describe("execute find", () => {
 							expect(state.countryId).to.eq(country.id);
 							expect(state.cities.length).to.eq(idMaps.states[state.id].cities.length);
 							state.cities.forEach((city) => {
-								expect(city).to.have.all.keys(["id", "name", "stateId"]);
-								expect(city.stateId).to.eq(state.id);
+								expect(city).to.have.all.keys(["id", "name", "parent"]);
+								expect(city.parent.stateId).to.eq(state.id);
 							});
 						});
 					});
@@ -472,6 +472,28 @@ describe("execute find", () => {
 			}).then((countries: Country[]) => {
 				expect(queryCount).to.eq(1);
 				expect(countries).to.have.length(0);
+			});
+		});
+	});
+
+	it("should not make join many queries if join many not selected", () => {
+		let expectedCountries: Country[] = data.countries.filter((country) => {
+			return country.states.some((state) => {
+				return state.name >= "n";
+			});
+		});
+		return definitions.then(({ countryOrm }) => {
+			return executeFind(countryOrm, {
+				fields: [
+					countryOrm.id,
+					countryOrm.name
+				],
+				filter: countryOrm.states.exists((state) => {
+					return state.name.gte("n");
+				})
+			}).then((countries: Country[]) => {
+				expect(queryCount).to.eq(1);
+				expect(countries).to.have.length(expectedCountries.length);
 			});
 		});
 	});

@@ -36,8 +36,10 @@ export interface City {
 	id: number;
 	name: string;
 
-	stateId: number;
-	state: State;
+	parent: {
+		stateId: number,
+		state: State
+	};
 }
 export interface Language {
 	id: number;
@@ -90,8 +92,10 @@ export interface CityOrm extends Orm {
 	id: field.primary.Numerical;
 	name: field.String;
 
-	stateId: field.Numerical;
-	state: join.One<StateOrm>;
+	parent: {
+		stateId: field.Numerical,
+		state: join.One<StateOrm>
+	};
 }
 
 export interface LanguageOrm extends Orm {
@@ -185,7 +189,7 @@ export const definitions: Promise<Definitions> = Promise.all([
 			}),
 
 			cities: join.Many<CityOrm>("cities").on((city, state) => {
-				return city.stateId.eq(state.id);
+				return city.parent.stateId.eq(state.id);
 			})
 		};
 	}),
@@ -197,10 +201,12 @@ export const definitions: Promise<Definitions> = Promise.all([
 			id: field.primary.Numerical("id"),
 			name: field.String("name"),
 
-			stateId: field.Numerical("state_id", undefined, "state.id"),
-			state: join.One<StateOrm>("states", true).on((city, state) => {
-				return city.stateId.eq(state.id);
-			})
+			parent: {
+				stateId: field.Numerical("state_id", undefined, "parent.state.id"),
+				state: join.One<StateOrm>("states", true).on((city, state) => {
+					return city.parent.stateId.eq(state.id);
+				})
+			}
 		};
 	}),
 	define<LanguageOrm>({
@@ -464,8 +470,10 @@ export function mockData(): Promise<Data> {
 					let city: City = {
 						id: row.id,
 						name: row.name,
-						stateId: row.state_id,
-						state: state
+						parent: {
+							stateId: row.state_id,
+							state: state
+						}
 					};
 					state.cities.push(city);
 					return city;

@@ -18,7 +18,7 @@ export function buildOrmClass<O extends Orm>(ref: OrmRef): typeof Orm {
 			super(definition.table, tableAs, path, parentOrm, baseOrm, rootOrm);
 
 			let self: O = this as any as O;
-			scaffold<O>(self, definition.schema);
+			scaffold(self, definition.schema);
 			if (definition.authBuilder != null) {
 				Orm.getProperties(self).auth = (auth: any) => {
 					return definition.authBuilder!(auth, self);
@@ -34,7 +34,13 @@ export function buildOrmClass<O extends Orm>(ref: OrmRef): typeof Orm {
 	return ormCtor;
 }
 
-function scaffold<O extends Orm>(orm: O, schema: OrmSchema<O>, obj: O | CompositeField = orm): O | CompositeField {
+function scaffold<O extends Orm>(orm: O, schema: OrmSchema<O>): O {
+	scaffoldFields(orm, schema);
+	scaffoldJoins(orm, schema);
+	return orm;
+}
+
+function scaffoldFields<O extends Orm>(orm: O, schema: OrmSchema<O>, obj: O | CompositeField = orm): O | CompositeField {
 	let ormProperties: OrmProperties = Orm.getProperties(orm),
 		properties: OrmProperties | CompositeProperties = obj instanceof Orm ? ormProperties : CompositeField.getProperties(obj);
 
@@ -71,7 +77,9 @@ function scaffold<O extends Orm>(orm: O, schema: OrmSchema<O>, obj: O | Composit
 		return !(schema[key] instanceof FieldDefinition || schema[key] instanceof JoinDefinition);
 	}).forEach((key) => {
 		let compositeSchema: OrmSchema<O> = schema[key] as OrmSchema<O>,
-			compositeField: CompositeField = buildCompositeField(orm, path.concat(key), compositeSchema);
+			compositeField: CompositeField = new CompositeField(orm, path.concat(key));
+		compositeField = scaffoldFields(orm, compositeSchema, compositeField);
+
 		Object.defineProperty(obj, key, {
 			enumerable: true,
 			value: compositeField
@@ -84,6 +92,24 @@ function scaffold<O extends Orm>(orm: O, schema: OrmSchema<O>, obj: O | Composit
 		compositeProperties.defaultFields.forEach((defaultField) => {
 			defaultFields.add(defaultField);
 		});
+	});
+
+	return obj;
+}
+function scaffoldJoins<O extends Orm>(orm: O, schema: OrmSchema<O>, obj: O | CompositeField = orm): O | CompositeField {
+	let ormProperties: OrmProperties = Orm.getProperties(orm),
+		properties: OrmProperties | CompositeProperties = obj instanceof Orm ? ormProperties : CompositeField.getProperties(obj);
+
+	let path: string[] = properties.path,
+		defaultFields: Set<Field<any, any>> = properties.defaultFields;
+
+	// add composite joins
+	Object.keys(schema).filter((key) => {
+		return !(schema[key] instanceof FieldDefinition || schema[key] instanceof JoinDefinition);
+	}).forEach((key) => {
+		let compositeSchema: OrmSchema<O> = schema[key] as OrmSchema<O>,
+			compositeField: CompositeField = obj[key] as CompositeField;
+		scaffoldJoins(orm, compositeSchema, compositeField);
 	});
 
 	// add join ones
@@ -121,11 +147,6 @@ function scaffold<O extends Orm>(orm: O, schema: OrmSchema<O>, obj: O | Composit
 	});
 
 	return obj;
-}
-
-export function buildCompositeField<O extends Orm>(orm: O, path: string[], schema: OrmSchema<O>): CompositeField {
-	let compositeField: CompositeField = new CompositeField(orm, path);
-	return scaffold(orm, schema, compositeField);
 }
 
 // TODO: move to misc?
