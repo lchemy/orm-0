@@ -89,6 +89,8 @@ function scaffoldFields<O extends Orm>(orm: O, schema: OrmSchema<O>, obj: O | Co
 		compositeProperties.fields.forEach((field) => {
 			fields.add(field);
 		});
+
+		// while this isn't necessary due to the equivalent in scaffoldJoin, this is left for completeness-sake
 		compositeProperties.defaultFields.forEach((defaultField) => {
 			defaultFields.add(defaultField);
 		});
@@ -96,6 +98,7 @@ function scaffoldFields<O extends Orm>(orm: O, schema: OrmSchema<O>, obj: O | Co
 
 	return obj;
 }
+
 function scaffoldJoins<O extends Orm>(orm: O, schema: OrmSchema<O>, obj: O | CompositeField = orm): O | CompositeField {
 	let ormProperties: OrmProperties = Orm.getProperties(orm),
 		properties: OrmProperties | CompositeProperties = obj instanceof Orm ? ormProperties : CompositeField.getProperties(obj);
@@ -110,6 +113,12 @@ function scaffoldJoins<O extends Orm>(orm: O, schema: OrmSchema<O>, obj: O | Com
 		let compositeSchema: OrmSchema<O> = schema[key] as OrmSchema<O>,
 			compositeField: CompositeField = obj[key] as CompositeField;
 		scaffoldJoins(orm, compositeSchema, compositeField);
+
+		// add default fields from composite field
+		let compositeProperties: CompositeProperties = CompositeField.getProperties(compositeField);
+		compositeProperties.defaultFields.forEach((defaultField) => {
+			defaultFields.add(defaultField);
+		});
 	});
 
 	// add join ones

@@ -62,22 +62,23 @@ function buildExecutionTree(orm: Orm, query: FindQuery): ExecutionTreeNode {
 		return createTreeNode(orm, data);
 	}
 
-	let baseOrms: Set<Orm> = new Set<Orm>(Array.from(data.selectedOrms).map(getBase)),
-		baseOrmsNodeMap: Map<Orm, ExecutionTreeNode> = new Map<Orm, ExecutionTreeNode>();
+	let selectedBaseOrms: Set<Orm> = new Set<Orm>(Array.from(data.selectedOrms).map(getBase)),
+		relatedBaseOrms: Set<Orm> = new Set<Orm>(Array.from(data.relatedOrms).map(getBase)),
+		relatedBaseOrmsNodeMap: Map<Orm, ExecutionTreeNode> = new Map<Orm, ExecutionTreeNode>();
 
-	baseOrms.forEach((baseOrm) => {
-		baseOrmsNodeMap.set(baseOrm, createTreeNode(baseOrm, data));
+	relatedBaseOrms.forEach((baseOrm) => {
+		relatedBaseOrmsNodeMap.set(baseOrm, createTreeNode(baseOrm, data));
 	});
-	baseOrms.forEach((baseOrm) => {
-		let node: ExecutionTreeNode = baseOrmsNodeMap.get(baseOrm)!,
+	selectedBaseOrms.forEach((baseOrm) => {
+		let node: ExecutionTreeNode = relatedBaseOrmsNodeMap.get(baseOrm)!,
 			parentOrm: Orm | undefined = Orm.getProperties(baseOrm).parent,
 			parentBaseOrm: Orm | undefined = parentOrm != null ? getBase(parentOrm) : undefined;
 		if (parentBaseOrm) {
-			baseOrmsNodeMap.get(parentBaseOrm)!.children.push(node);
+			relatedBaseOrmsNodeMap.get(parentBaseOrm)!.children.push(node);
 		}
 	});
 
-	return baseOrmsNodeMap.get(orm)!;
+	return relatedBaseOrmsNodeMap.get(orm)!;
 }
 
 function createTreeNode(baseOrm: Orm, data: QueryData): ExecutionTreeNode {
