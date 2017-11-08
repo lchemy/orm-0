@@ -11,7 +11,7 @@ export function unflatten(item: any): Object {
 		return item;
 	}
 
-	if (typeof item !== "object" || item.constructor !== Object) {
+	if (typeof item !== "object" || item.constructor === Date || item.constructor === Buffer) {
 		return item;
 	}
 
