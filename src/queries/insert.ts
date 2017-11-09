@@ -43,7 +43,7 @@ export function insert<O extends Orm, M>(
 		return withTransaction((tx) => {
 			const dialect: string = (tx as any).client.dialect;
 			if (dialect === "postgresql" || dialect === "mssql" || dialect === "oracle") {
-				return tx.insert(data).returning(primaryKey.column).then((res) => {
+				return tx.insert(data).into(table).returning(primaryKey.column).then((res) => {
 					// tslint:disable-next-line
 					console.log(res);
 					return [];

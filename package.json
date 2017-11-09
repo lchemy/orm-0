@@ -1,6 +1,6 @@
 {
   "name": "@lchemy/orm",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "",
   "author": "Jesse Zhang (http://jessezhang.me/)",
   "repository": {
@@ -15,6 +15,7 @@
     "clean": "del-cli ./.nyc_output ./coverage ./dist ./test-tmp",
     "coverage": "nyc --reporter lcov --reporter text --reporter text-summary --exclude \"**/test/**\" --report-dir ./coverage npm run test",
     "coveralls": "cat ./coverage/lcov.info | coveralls",
+    "docker": "charon docker",
     "lint": "tslint -c tslint.json --project tsconfig.json -t stylish",
     "postbuild": "node ./scripts/copy-package && node ./scripts/copy-dist-files",
     "postinstall": "typings install",
