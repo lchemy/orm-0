@@ -121,7 +121,8 @@ function translateOpFilterNode(filter: OpFilterNode<any, any>): Knex.Raw {
 
 	let mapField: (value: any) => string = (value: any): string => {
 		if (value instanceof Field) {
-			return value.aliasedColumn;
+			const [table, column]: string[] = value.aliasedColumn.split(".");
+			return `${ knex.client.wrapIdentifier(table) }.${ column }`;
 		}
 		bindings.push(value);
 		return "?";
